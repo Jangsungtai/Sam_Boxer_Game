@@ -1,0 +1,96 @@
+
+# (터미널에서 beat_boxer_game 폴더로 이동한 후 실행)
+
+# --- 1단계: Git 초기화 및 .gitignore 생성 ---
+
+git init
+# 설명: 현재 폴더(beat_boxer_game)에 Git 저장소를 새로 만듭니다. (.git 폴더 생성)
+
+cat <<EOT >> .gitignore
+# Python
+venv/
+*.pyc
+__pycache__/
+
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/
+
+# PyInstaller
+dist/
+build/
+*.spec
+EOT
+# 설명: .gitignore 파일을 생성합니다. 이 파일에 적힌 목록(가상환경, 캐시, 빌드 파일 등)은
+# Git이 "무시"하며, 버전 관리에 포함시키지 않습니다.
+
+# --- 2단계: GitHub 연동 및 첫 커밋 ---
+
+git add .
+# 설명: 변경된 모든 파일(.)을 저장할 목록(장바구니)에 추가합니다.
+
+git commit -m "Initial commit: v1.0 - 5단계 씬 관리까지 완료"
+# 설명: 장바구니에 담긴 파일들을 하나의 버전(스냅샷)으로 저장하고, "..."라는 메모를 남깁니다.
+
+# (!!!) [여기에_GitHub_저장소_URL_붙여넣기] 부분을 실제 URL로 수정하세요
+git remote add origin https://github.com/Jangsungtai/Sam_Boxer_Game.git
+# 설명: GitHub에 있는 원격 저장소에 'origin'이라는 별명을 붙여 연결합니다.
+
+git branch -M main
+# 설명: 현재 브랜치의 이름을 'main'으로 변경합니다. (기본값인 'master' 대신 'main' 사용)
+
+
+# 설명: 내 컴퓨터('main' 브랜치)의 모든 커밋 기록을 GitHub('origin')으로 업로드(푸시)합니다.
+
+# --- 3단계: `develop` 브랜치 생성 (개발용) ---
+
+git checkout -b develop
+# 설명: 'develop'이라는 새 브랜치(복사본)를 만들고, 그 브랜치로 즉시 이동(checkout)합니다.
+
+git push -u origin develop
+# 설명: 새로 만든 'develop' 브랜치를 GitHub에도 업로드하여 백업합니다.
+
+# --- 4단계: (예시) 새 기능 개발 및 병합 ---
+
+# (개발 시작 시)
+git checkout -b feature/add-new-song develop
+# 설명: 'develop' 브랜치에서 'feature/add-new-song'이라는 새 브랜치(작업실)를 만듭니다.
+
+# ( ... 코드 수정 후 ... )
+
+git add .
+# 설명: 'feature/add-new-song' 브랜치에서 수정한 파일들을 장바구니에 담습니다.
+
+git commit -m "Feat: 'song2' 비트맵 및 음악 파일 추가"
+# 설명: 'feature/add-new-song' 브랜치에 'song2 추가' 작업을 저장합니다.
+
+# (개발 완료 후 'develop'에 합치기)
+git checkout develop
+# 설명: 'develop' 브랜치(메인 개발 라인)로 다시 돌아갑니다.
+
+git merge feature/add-new-song
+# 설명: 'develop' 브랜치에 'feature/add-new-song' 브랜치의 모든 변경 내용을 합칩니다.
+
+git push origin develop
+# 설명: 'feature'가 합쳐진 'develop' 브랜치의 최신 상태를 GitHub에 업로드합니다.
+
+# --- 5단계: (예시) `main` 브랜치에 출시 및 버전 태그 ---
+
+# (출시 시)
+git checkout main
+# 설명: 'main' 브랜치(정식 출시 버전)로 이동합니다.
+
+git merge develop
+# 설명: 'main' 브랜치에 'develop' 브랜치의 모든 변경 내용을 합쳐서 출시 준비를 합니다.
+
+git push origin main
+# 설명: 출시 내용이 반영된 'main' 브랜치를 GitHub에 업로드합니다.
+
+# (버전 태그 생성 및 푸시)
+git tag -a v1.0.0 -m "Beat Boxer v1.0.0 출시"
+# 설명: 현재 상태에 'v1.0.0'이라는 버전 스티커(태그)를 붙입니다.
+
+git push origin v1.0.0
+# 설명: 'v1.0.0' 태그를 GitHub에도 업로드하여 공식 버전을 표시합니다.

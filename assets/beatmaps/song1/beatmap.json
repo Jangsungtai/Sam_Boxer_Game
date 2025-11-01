@@ -1,0 +1,17 @@
+[
+  {"t": 3.0, "type": "JAB_L"},
+  {"t": 3.5, "type": "JAB_R"},
+  {"t": 4.5, "type": "JAB_L"},
+  {"t": 5.0, "type": "JAB_R"},
+  {"t": 6.0, "type": "DUCK"},
+  {"t": 7.0, "type": "JAB_L"},
+  {"t": 7.2, "type": "JAB_R"},
+  {"t": 8.0, "type": "BOMB", "lane": "L"},
+  {"t": 8.5, "type": "JAB_R"},
+  {"t": 9.5, "type": "DUCK"},
+  {"t": 11.0, "type": "JAB_R"},
+  {"t": 11.5, "type": "JAB_L"},
+  {"t": 12.0, "type": "JAB_R"},
+  {"t": 13.0, "type": "DUCK"},
+  {"t": 14.0, "type": "END"}
+]

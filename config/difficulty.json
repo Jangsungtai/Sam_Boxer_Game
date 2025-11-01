@@ -1,0 +1,20 @@
+{
+  "default": "Normal",
+  "levels": {
+    "Easy": {
+      "pre_spawn_time": 1.5,
+      "judge_timing_scale": 1.2,
+      "score_multiplier": 0.8
+    },
+    "Normal": {
+      "pre_spawn_time": 1.2,
+      "judge_timing_scale": 1.0,
+      "score_multiplier": 1.0
+    },
+    "Hard": {
+      "pre_spawn_time": 1.0,
+      "judge_timing_scale": 0.9,
+      "score_multiplier": 1.2
+    }
+  }
+}

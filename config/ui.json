@@ -1,0 +1,30 @@
+{
+  "colors": {
+    "notes": {
+      "JAB_L": [255, 128, 0],
+      "JAB_R": [0, 128, 255],
+      "DUCK": [200, 200, 200],
+      "BOMB": [0, 0, 255]
+    },
+    "judgement": {
+      "PERFECT": [0, 255, 255],
+      "GREAT": [0, 255, 0],
+      "GOOD": [255, 128, 0],
+      "MISS": [0, 0, 255],
+      "BOMB!": [128, 0, 255]
+    },
+    "hud": {
+      "duck_line": [0, 255, 0],
+      "hit_zone": [255, 255, 255],
+      "score_text": [255, 255, 255],
+      "combo_text": [255, 255, 255]
+    }
+  },
+  "positions": {
+    "hit_zone_ratio": [0.5, 0.6],
+    "duck_line_shoulder_offset_ratio": 0.25,
+    "score": [20, 40],
+    "combo": "auto_right",
+    "judge_log_start": [20, 100]
+  }
+}

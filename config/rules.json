@@ -1,0 +1,19 @@
+{
+  "judge_timing": {
+    "perfect": 0.10,
+    "great": 0.18,
+    "good": 0.25
+  },
+  "score_base": {
+    "PERFECT": 300,
+    "GREAT": 200,
+    "GOOD": 100,
+    "MISS": 0
+  },
+  "bomb_penalty": -500,
+  "action_thresholds": {
+    "action_refractory": 0.25,
+    "action_v_thresh": 1.0,
+    "action_ang_thresh": 160
+  }
+}
