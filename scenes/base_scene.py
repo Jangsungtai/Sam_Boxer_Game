@@ -13,21 +13,25 @@ class BaseScene:
         self.next_scene_name = None # 다음 씬으로 전환할 때 사용
         self.persistent_data = {} # 씬 간에 전달할 데이터 (예: 최종 점수)
 
-    def handle_event(self, event):
-        """키보드/마우스 이벤트를 처리합니다."""
+    # --- (수정) 'event' 객체 대신 'key' (정수)를 받음 ---
+    def handle_event(self, key):
+        """키보드 입력을 처리합니다 (OpenCV key code)."""
         pass
+    # --- (수정 끝) ---
 
     def update(self, frame, now):
         """매 프레임 게임 로직을 업데이트합니다."""
         pass
 
-    def draw(self):
+    def draw(self, frame):
         """화면에 UI를 그립니다."""
         pass
 
     def startup(self, persistent_data):
         """씬이 시작될 때 이전 씬에서 데이터를 받습니다."""
         self.persistent_data = persistent_data
+        # 씬 시작 시 next_scene_name 초기화
+        self.next_scene_name = None 
 
     def cleanup(self):
         """씬이 종료될 때 데이터를 반환합니다."""

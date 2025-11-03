@@ -1,11 +1,9 @@
-# main.py
-
 import sys
 import pygame
 import cv2
 import json
 import time
-import os  # <--- 이 줄을 추가하세요
+import os
 
 # 씬(Scene) 임포트
 from scenes.main_menu_scene import MainMenuScene
@@ -20,13 +18,28 @@ def resource_path(relative_path):
         base_path = sys._MEIPASS
     except Exception:
         # PyInstaller가 아닌 일반 .py 실행 환경
-        base_path = os.path.abspath(".") # (이제 'os'를 인식합니다)
+        base_path = os.path.abspath(".")
 
-    return os.path.join(base_path, relative_path) # (이제 'os'를 인식합니다)
+    return os.path.join(base_path, relative_path)
+
+def get_best_camera_index():
+    """ 사용 가능한 카메라 인덱스를 역순으로 (e.g., 3, 2, 1, 0) 탐색합니다. """
+    print("사용 가능한 카메라를 찾는 중...")
+    # 4번부터 0번까지 역순으로 탐색
+    for index in range(4, -1, -1):
+        # cv2.CAP_AVFOUNDATION: Mac의 네이티브 카메라 API를 강제 사용
+        cap = cv2.VideoCapture(index, cv2.CAP_AVFOUNDATION)
+        if cap.isOpened():
+            print(f"카메라 발견: 인덱스 {index}")
+            cap.release() # 테스트 종료
+            return index
+            
+    print("기본 카메라(0번)를 찾지 못했습니다. 0번으로 시도합니다.")
+    return 0
 
 
 def main():
-    # 1. Pygame 초기화 (오디오/이벤트)
+    # 1. Pygame 초기화 (오디오)
     try:
         pygame.init()
         print("Pygame 모듈 초기화 성공")
@@ -35,12 +48,13 @@ def main():
         return
 
     # 2. OpenCV 카메라 초기화
-    cap = cv2.VideoCapture(0) # 1번 카메라 (이전 오류 수정)
+    camera_index = get_best_camera_index()
+    cap = cv2.VideoCapture(camera_index)
     if not cap.isOpened():
-        print("오류: 카메라를 열 수 없습니다.")
+        print(f"오류: 카메라(인덱스 {camera_index})를 열 수 없습니다.")
         pygame.quit()
         return
-    print("카메라 초기화 성공")
+    print(f"카메라 초기화 성공 (인덱스: {camera_index})")
 
     # 3. 설정 파일 로드
     try:
@@ -59,8 +73,11 @@ def main():
     # 4. 오디오 매니저 생성
     audio_manager = AudioManager()
     sfx_map = {
-        "PERFECT": "hit_perfect.wav", "GREAT": "hit_good.wav",
-        "GOOD": "hit_good.wav", "MISS": "miss.wav", "BOMB!": "bomb.wav"
+        "PERFECT": "hit_perfect.wav",
+        "GREAT": "hit_good.wav",
+        "GOOD": "hit_good.wav",
+        "MISS": "miss.wav",
+        "BOMB!": "bomb.wav"
     }
     audio_manager.load_sounds(sfx_map)
 
@@ -71,40 +88,31 @@ def main():
         "RESULT": ResultScene(cap, audio_manager, CONFIG)
     }
     
-    active_scene = scenes["MENU"] 
+    active_scene = scenes["MENU"] # 시작 씬
     active_scene.startup({})
     
     print("메인 루프를 시작합니다. (첫 씬: MENU)")
+    print("--- 키 안내 ---")
+    print("  Q / ESC : 즉시 종료")
+    print("  SPACE (메뉴) : 게임 시작")
+    print("  M (게임/결과) : 메뉴로")
+    print("---------------")
 
     # 6. 메인 게임 루프 (씬 매니저)
     try:
         while True:
-            # --- (수정) 1. 글로벌 이벤트 처리 (종료) ---
-            events = pygame.event.get()
-            for event in events:
+            # (1) Pygame 이벤트 처리 (창 종료 버튼 'X' 감지용)
+            for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     print("종료 이벤트 (pygame.QUIT)")
-                    return # ★★★ GLOBAL QUIT ★★★
-
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_q: # Q/q 키
-                        print("'(Q)uit' 키 입력. 강제 종료.")
-                        return # ★★★ GLOBAL QUIT ★★★
-                    
-                    if event.key == pygame.K_ESCAPE: # ESC 키
-                        print("'(ESC)ape' 키 입력. 강제 종료.")
-                        return # ★★★ GLOBAL QUIT ★★★
-
-                # 씬에 이벤트 전달 (Q, ESC가 아닌 모든 이벤트)
-                active_scene.handle_event(event)
-            # --- (수정 끝) ---
+                    return
 
             # (2) 카메라 프레임 읽기
             ret, frame = cap.read()
             if not ret:
                 print("오류: 프레임 읽기 실패")
                 break
-            frame = cv2.flip(frame, 1)
+            frame = cv2.flip(frame, 1) # 좌우 반전
             
             # (3) 현재 씬 로직 업데이트
             active_scene.update(frame, time.time())
@@ -115,7 +123,25 @@ def main():
             # (5) 화면 표시
             cv2.imshow("Beat Boxer", frame)
 
-            # (6) 씬 전환 확인
+            # (6) OpenCV 키보드 입력 처리
+            # (6) OpenCV 키보드 입력 처리
+            key = cv2.waitKey(1) & 0xFF
+
+            if key != 255:
+                try:
+                    print(f"[DEBUG] Key pressed. ASCII: {key}, Char: '{chr(key)}'")
+                except:
+                    print(f"[DEBUG] Key pressed. ASCII: {key} (Non-printable char)")
+
+            # (7) 전역 키 처리 (종료)
+            if key == 27:  # ESC only
+                print("'ESC' 키 입력. 프로그램 종료.")
+                return 
+
+            # (8) 씬에 키 이벤트 전달
+            active_scene.handle_event(key)
+
+            # (9) 씬 전환 확인
             next_scene_name = active_scene.next_scene_name
             if next_scene_name:
                 print(f"씬 전환: {active_scene.__class__.__name__} -> {next_scene_name}")
@@ -125,11 +151,6 @@ def main():
                     print(f"오류: {next_scene_name} 씬을 찾을 수 없습니다. 종료합니다.")
                     break
                 active_scene.startup(persistent_data)
-
-            # --- (수정) (7) 프레임 대기 (OpenCV 창 유지를 위해 1ms 대기) ---
-            # 키보드 입력은 Pygame 루프가 전담하므로 여기서는 키 검사 안 함
-            cv2.waitKey(1)
-            # --- (수정 끝) ---
                 
     except KeyboardInterrupt:
         print("\n(Ctrl+C) 게임 실행을 강제 중단합니다.")
