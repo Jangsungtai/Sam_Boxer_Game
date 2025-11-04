@@ -11,7 +11,8 @@ import pygame
 import mediapipe as mp 
 
 from scenes.base_scene import BaseScene
-from core.pose_tracker import PoseTracker
+# (수정) PoseTracker 임포트 제거
+# from core.pose_tracker import PoseTracker 
 from core.note import Note
 
 def resource_path(relative_path):
@@ -24,8 +25,9 @@ def resource_path(relative_path):
 mp_pose = mp.solutions.pose
 
 class GameScene(BaseScene):
-    def __init__(self, screen, audio_manager, config):
-        super().__init__(screen, audio_manager, config)
+    def __init__(self, screen, audio_manager, config, pose_tracker):
+        super().__init__(screen, audio_manager, config, pose_tracker)
+        
         self.width = int(self.screen.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.height = int(self.screen.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.config_rules = config["rules"]; self.config_difficulty = config["difficulty"]; self.config_ui = config["ui"]
@@ -34,7 +36,7 @@ class GameScene(BaseScene):
         self.judge_timing = {k: v * self.difficulty["judge_timing_scale"] for k, v in self.config_rules["judge_timing"].items()}
         self.pre_spawn_time = self.difficulty["pre_spawn_time"]; self.score_multiplier = self.difficulty["score_multiplier"]
         self.bomb_penalty = self.config_rules["bomb_penalty"]
-        self.pose_tracker = PoseTracker(self.width, self.height, self.config_rules, self.config_ui)
+        
         beatmap_path = resource_path("assets/beatmaps/song1/beatmap.json")
         try:
             with open(beatmap_path, 'r') as f: beat_map_data = json.load(f)
@@ -82,8 +84,12 @@ class GameScene(BaseScene):
     def reset_game_state(self):
         self.next_note_idx = 0; self.state = {"score": 0, "combo": 0, "start_time": None, "game_over": False}
         self.active_notes = []; self.judges_log = deque(maxlen=5)
-        hz_ratio = self.config_ui["positions"]["hit_zone_ratio"]
-        self.hit_zone = (int(self.width * hz_ratio[0]), int(self.height * hz_ratio[1]))
+        
+        # --- (수정) hit_zone을 동적 변수로 초기화 ---
+        # (ui.json의 값 대신 기본 중앙값으로 시작)
+        self.hit_zone = (int(self.width * 0.5), int(self.height * 0.6)) 
+        # --- (수정 끝) ---
+        
         self.duck_line_y = int(self.height * 0.7); self.audio_manager.stop_music()
         
         self.calib_hold_start_time = 0.0
@@ -101,7 +107,7 @@ class GameScene(BaseScene):
         } 
         self.smoothed_landmark_pos = self.calib_landmark_pos.copy()
         
-        self.base_ear_distance = 150.0 # 캘리브레이션 전 기본값 (150px)
+        self.base_ear_distance = 150.0 
         self.dynamic_size_ratio = 1.0 
         self.smoothed_dynamic_size_ratio = 1.0
 
@@ -124,7 +130,26 @@ class GameScene(BaseScene):
         return super().cleanup() 
 
     def handle_event(self, key):
-        pass
+        if self.scene_state == "CALIBRATING" and key == ord('0'):
+            print("Calibration: '0' key pressed. Skipping calibration.")
+            
+            self.duck_line_y = self.pose_tracker.calib_data['duck_line_y'] 
+            
+            if self.last_pose_landmarks:
+                 self.pose_tracker.calibrate_from_pose(self.last_pose_landmarks)
+                 self.duck_line_y = self.pose_tracker.calib_data['duck_line_y']
+                 if self.smoothed_landmark_pos["left_ear"] and self.smoothed_landmark_pos["right_ear"]:
+                    l_ear = np.array(self.smoothed_landmark_pos["left_ear"])
+                    r_ear = np.array(self.smoothed_landmark_pos["right_ear"])
+                    self.base_ear_distance = np.linalg.norm(l_ear - r_ear)
+                    print(f"Calibration Done (SKIPPED): Base Ear Distance set to {self.base_ear_distance:.1f}px")
+                 else:
+                    print(f"Calibration Warning (SKIPPED): Could not set Base Ear Distance. Using default {self.base_ear_distance}px")
+            else:
+                print(f"Calibration Warning (SKIPPED): No pose detected. Using default {self.base_ear_distance}px")
+                
+            self.scene_state = "COUNTDOWN"
+            self.state_start_time = time.time()
     
     def _overlay_transparent_image(self, background_frame, overlay_img, pos):
         """
@@ -133,43 +158,31 @@ class GameScene(BaseScene):
         """
         try:
             x, y = pos
-            
             h, w, _ = overlay_img.shape
-            
             x1, y1 = max(x, 0), max(y, 0)
             x2, y2 = min(x + w, self.width), min(y + h, self.height)
-            
             w_roi = x2 - x1
             h_roi = y2 - y1
-            
             if w_roi <= 0 or h_roi <= 0: return 
-
             overlay_x1 = 0 if x >= 0 else -x
             overlay_y1 = 0 if y >= 0 else -y
             overlay_x2 = overlay_x1 + w_roi
             overlay_y2 = overlay_y1 + h_roi
-            
             overlay_bgr = overlay_img[overlay_y1:overlay_y2, overlay_x1:overlay_x2, 0:3]
             alpha_mask = overlay_img[overlay_y1:overlay_y2, overlay_x1:overlay_x2, 3] / 255.0
-            
             alpha_mask_3ch = cv2.merge([alpha_mask, alpha_mask, alpha_mask])
-
             roi = background_frame[y1:y2, x1:x2]
-
             bg_masked = (1.0 - alpha_mask_3ch) * roi
             fg_masked = alpha_mask_3ch * overlay_bgr
-            
             blended_roi = cv2.add(bg_masked, fg_masked).astype(np.uint8)
-
             background_frame[y1:y2, x1:x2] = blended_roi
-
         except Exception as e:
-            # print(f"Overlay Error: {e}") 
             pass 
 
     def _check_calib_position(self, landmarks):
         """랜드마크가 타겟 안에 있는지 확인하고, 현재 좌표도 반환합니다."""
         
+        # --- (수정) positions 딕셔너리 구조 유지 ---
         positions = {
             "head_center": None, "nose": None, "left_eye_inner": None, "right_eye_inner": None,
             "left_wrist": None, "right_wrist": None, 
@@ -179,6 +192,8 @@ class GameScene(BaseScene):
             "left_mouth": None, "right_mouth": None,
             "left_index": None, "right_index": None
         } 
+        # --- (수정 끝) ---
+        
         if not landmarks:
             return False, (False, False, False), positions
 
@@ -234,13 +249,16 @@ class GameScene(BaseScene):
         
         return all_ok, (head_ok, lw_ok, rw_ok), positions
 
+    # --- (수정) _spawn_notes (hit_zone 제거) ---
     def _spawn_notes(self, t_game):
         while (self.next_note_idx < len(self.beat_map) and
                self.beat_map[self.next_note_idx]['t'] - self.pre_spawn_time <= t_game):
             item = self.beat_map[self.next_note_idx]; self.next_note_idx += 1
             if item['type'] == 'END': self.state['game_over'] = True; break
-            note = Note(item, self.width, self.height, self.hit_zone, self.duck_line_y, self.pre_spawn_time, self.config_ui["colors"]["notes"])
+            # (수정) Note 생성자에서 self.hit_zone 제거
+            note = Note(item, self.width, self.height, self.duck_line_y, self.pre_spawn_time, self.config_ui["colors"]["notes"])
             self.active_notes.append(note)
+    # --- (수정 끝) ---
 
     def _judge_time(self, dt):
         adt = abs(dt)
@@ -282,6 +300,7 @@ class GameScene(BaseScene):
                 note.missed = True
                 if note.typ != "BOMB": self._add_judgement("MISS", note.typ)
 
+    # --- (수정) _draw_hud (hit_zone을 동적으로 사용) ---
     def _draw_hud(self, frame):
         ui_cfg = self.config_ui; pos_cfg = ui_cfg["positions"]; col_cfg = ui_cfg["colors"]["hud"]
         
@@ -289,7 +308,11 @@ class GameScene(BaseScene):
         
         cv2.line(frame, (0, duck_y), (self.width, duck_y), tuple(col_cfg["duck_line"]), 2)
         cv2.putText(frame, "DUCK LINE", (10, duck_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, tuple(col_cfg["duck_line"]), 2)
-        hz_x, hz_y = self.hit_zone; cv2.circle(frame, (hz_x, hz_y), 30, tuple(col_cfg["hit_zone"]), 2)
+        
+        # (수정) self.hit_zone이 매 프레임 업데이트되므로, 여기서 그릴 때 동적으로 그려짐
+        hz_x, hz_y = self.hit_zone 
+        cv2.circle(frame, (hz_x, hz_y), 30, tuple(col_cfg["hit_zone"]), 2)
+        
         score_pos = tuple(pos_cfg["score"]); score_text = f"Score: {self.state['score']}"; combo_text = f"Combo: {self.state['combo']}"
         cv2.putText(frame, score_text, score_pos, cv2.FONT_HERSHEY_SIMPLEX, 1, tuple(col_cfg["score_text"]), 3)
         (text_width, _), _ = cv2.getTextSize(combo_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 3)
@@ -299,18 +322,18 @@ class GameScene(BaseScene):
         for i, (text, color) in enumerate(self.judges_log):
             y_pos = log_start_pos[1] + i * 40
             cv2.putText(frame, text, (log_start_pos[0], y_pos), cv2.FONT_HERSHEY_SIMPLEX, 1.2, color, 3)
+    # --- (수정 끝) ---
             
-    def update(self, frame, now):
+    def update(self, frame, hit_events, landmarks, now):
         
-        # 1. 포즈 트래킹 및 스무딩을 매 프레임 실행
-        hit_events, landmarks = self.pose_tracker.process_frame(frame, now)
-        
+        # 1. 랜드마크가 있으면 저장
         if landmarks:
             self.last_pose_landmarks = landmarks
         
+        # 2. 캘리브레이션 조준 확인
         all_ok, self.calib_status, raw_landmark_pos = self._check_calib_position(landmarks)
 
-        # '귀-귀' 벡터로 각도/크기 계산
+        # 3. '귀-귀' 벡터로 각도/크기 계산
         raw_L_EAR = raw_landmark_pos.get("left_ear")
         raw_R_EAR = raw_landmark_pos.get("right_ear")
         
@@ -327,16 +350,32 @@ class GameScene(BaseScene):
         else:
             self.head_angle = 0.0
             self.dynamic_size_ratio = 1.0
-
-        # (수정) 손 각도/길이 계산 로직 제거
         
-        # 2. 스무딩
+        # 4. 스무딩
         SMOOTH_FACTOR = 0.5 
         
+        # --- (수정) 스무딩 로직 (어깨 튜플 처리) ---
         for key in self.smoothed_landmark_pos.keys():
-            if key == "shoulders": continue
             raw_pos = raw_landmark_pos.get(key)
             prev_pos = self.smoothed_landmark_pos.get(key)
+            
+            if key == "shoulders":
+                raw_l, raw_r = raw_pos if raw_pos and None not in raw_pos else (None, None)
+                prev_l, prev_r = prev_pos if prev_pos and None not in prev_pos else (None, None)
+                
+                def smooth_point(raw, prev):
+                    if raw:
+                        if prev:
+                            x = prev[0] * (1.0 - SMOOTH_FACTOR) + raw[0] * SMOOTH_FACTOR
+                            y = prev[1] * (1.0 - SMOOTH_FACTOR) + raw[1] * SMOOTH_FACTOR
+                            return (x, y)
+                        return raw
+                    return None
+                    
+                self.smoothed_landmark_pos[key] = (smooth_point(raw_l, prev_l), smooth_point(raw_r, prev_r))
+                continue # 'shoulders' 키는 스무딩 후 건너뛰기
+
+            # (기존 랜드마크 스무딩)
             if raw_pos:
                 if prev_pos:
                     new_x = prev_pos[0] * (1.0 - SMOOTH_FACTOR) + raw_pos[0] * SMOOTH_FACTOR
@@ -346,15 +385,52 @@ class GameScene(BaseScene):
                     self.smoothed_landmark_pos[key] = raw_pos
             else:
                 self.smoothed_landmark_pos[key] = None
+        # --- (스무딩 로직 끝) ---
         
         # 각도/크기 스무딩
         self.smoothed_head_angle = self.smoothed_head_angle * (1.0 - SMOOTH_FACTOR) + self.head_angle * SMOOTH_FACTOR
         self.smoothed_dynamic_size_ratio = self.smoothed_dynamic_size_ratio * (1.0 - SMOOTH_FACTOR) + self.dynamic_size_ratio * SMOOTH_FACTOR
-        
-        # (수정) 글러브 스무딩 제거
 
-        # 3. 씬 상태에 따른 로직 분기
+        # --- (추가) 5. 동적 히트존 계산 ---
+        sm_l_shoulder, sm_r_shoulder = self.smoothed_landmark_pos.get("shoulders", (None, None))
+        sm_l_mouth = self.smoothed_landmark_pos.get("left_mouth")
+        sm_r_mouth = self.smoothed_landmark_pos.get("right_mouth")
+
+        # 5a. Y좌표 (턱 높이)
+        if sm_l_mouth and sm_r_mouth:
+            mouth_mid_y = (sm_l_mouth[1] + sm_r_mouth[1]) / 2
+            # (귀-귀 거리의 10% 정도를 턱 길이로 추정)
+            chin_offset = (self.base_ear_distance * self.smoothed_dynamic_size_ratio) * 0.2
+            target_y = mouth_mid_y + chin_offset
+        else:
+            target_y = self.hit_zone[1] # 이전 값 유지
+
+        # 5b. X좌표 (어깨 안쪽)
+        if sm_l_shoulder and sm_r_shoulder:
+            # sm_l_shoulder = P(11) (화면 오른쪽), sm_r_shoulder = P(12) (화면 왼쪽)
+            screen_left_shoulder_x = sm_r_shoulder[0]
+            screen_right_shoulder_x = sm_l_shoulder[0]
+            
+            torso_center_x = (screen_left_shoulder_x + screen_right_shoulder_x) / 2
+            
+            # 어깨 안쪽으로 10% 정도 패딩
+            padding = (screen_right_shoulder_x - screen_left_shoulder_x) * 0.1
+            min_x = screen_left_shoulder_x + padding
+            max_x = screen_right_shoulder_x - padding
+            
+            # X좌표를 어깨 안쪽으로 제한 (clamp)
+            target_x = np.clip(torso_center_x, min_x, max_x)
+        else:
+            target_x = self.hit_zone[0] # 이전 값 유지
+            
+        # 5c. self.hit_zone 업데이트
+        self.hit_zone = (int(target_x), int(target_y))
+        # --- (동적 히트존 계산 끝) ---
+
+
+        # 6. 씬 상태에 따른 로직 분기
         if self.scene_state == "CALIBRATING":
+            
             if all_ok:
                 if self.calib_hold_start_time == 0.0:
                     print("Calibration: In position! Hold...")
@@ -367,7 +443,6 @@ class GameScene(BaseScene):
                     self.pose_tracker.calibrate_from_pose(self.last_pose_landmarks)
                     self.duck_line_y = self.pose_tracker.calib_data['duck_line_y']
                     
-                    # (수정) 캘리브레이션 완료 시, '기준 귀-귀 거리'를 저장
                     if self.smoothed_landmark_pos["left_ear"] and self.smoothed_landmark_pos["right_ear"]:
                         l_ear = np.array(self.smoothed_landmark_pos["left_ear"])
                         r_ear = np.array(self.smoothed_landmark_pos["right_ear"])
@@ -401,7 +476,6 @@ class GameScene(BaseScene):
             if hit_events: self._handle_hits(hit_events, t_game)
             self._check_misses(t_game)
 
-    # --- (수정) _draw_equipment (2D Resize/Rotate 방식) ---
     def _draw_equipment(self, frame):
         """
         현재 씬 상태와 랜드마크 위치에 따라 헤드기어만 그립니다.
@@ -409,27 +483,21 @@ class GameScene(BaseScene):
         draw_head = False
         current_head_center_pos = self.smoothed_landmark_pos["head_center"]
 
-        # --- (수정) 캘리브레이션 중에는 헬멧 그리지 않음 ---
         if self.scene_state == "CALIBRATING":
             draw_head = False 
         else:
-            # 캘리브레이션 후 (COUNTDOWN, PLAYING)
-            if current_head_center_pos: # 얼굴(미간)이 감지되면
-                draw_head = True # 헬멧을 그림
-        # --- (수정 끝) ---
+            if current_head_center_pos:
+                draw_head = True
         
-        # 'K' 값은 이미지에 맞게 조절해야 하는 '매직 넘버'
         HEADGEAR_WIDTH_K = 1.8 # (헤드기어 너비 = 귀-귀 거리 * 1.8)
         
         # 1. 헤드기어 (미간 기준)
         if draw_head and self.img_headgear_orig is not None and current_head_center_pos:
             
-            # '귀-귀 거리' 기반으로 '너비' 계산
             target_width = int(self.base_ear_distance * self.smoothed_dynamic_size_ratio * HEADGEAR_WIDTH_K)
             if target_width <= 0: target_width = 1 
             
             try:
-                # 원본 비율에 맞춰 '높이' 계산
                 orig_h, orig_w, _ = self.img_headgear_orig.shape
                 aspect_ratio = orig_h / orig_w
                 target_height = int(target_width * aspect_ratio)
@@ -440,7 +508,6 @@ class GameScene(BaseScene):
                 (h_img, w_img) = resized_img.shape[:2]
                 center = (w_img // 2, h_img // 2)
                 
-                # '귀-귀' 벡터 기반 각도 사용
                 M = cv2.getRotationMatrix2D(center, self.smoothed_head_angle, 1.0) 
                 
                 rotated_img = cv2.warpAffine(resized_img, M, (w_img, h_img), 
@@ -451,13 +518,11 @@ class GameScene(BaseScene):
                 h_rot, w_rot, _ = rotated_img.shape
                 top_left = (int(current_head_center_pos[0] - w_rot/2), int(current_head_center_pos[1] - h_rot/2))
                 
-                # _overlay_transparent_image 함수를 호출하여 합성
                 self._overlay_transparent_image(frame, rotated_img, top_left)
                 
             except Exception as e: 
                 # print(f"Headgear draw error: {e}") 
                 pass 
-    # --- (수정 끝) ---
 
     def draw(self, frame):
         now = time.time()
@@ -496,5 +561,10 @@ class GameScene(BaseScene):
         elif self.scene_state == "PLAYING":
             # 게임 HUD 및 노트 그리기
             self._draw_hud(frame)
-            for note in self.active_notes: note.update_and_draw(frame, now, self.state["start_time"])
+            
+            # --- (수정) note.update_and_draw에 동적 self.hit_zone 전달 ---
+            for note in self.active_notes:
+                note.update_and_draw(frame, now, self.state["start_time"], self.hit_zone)
+            # --- (수정 끝) ---
+                
             self.active_notes = [n for n in self.active_notes if not n.hit and not n.missed]

@@ -15,50 +15,45 @@ class PoseTracker:
         self.pose = mp_pose.Pose(
             model_complexity=1,
             min_detection_confidence=0.5,
-            min_tracking_confidence=0.5
+            min_tracking_confidence=0.5,
+            enable_segmentation=True # --- (수정) 배경 분리 기능 활성화 ---
         )
         
         self.width = width
         self.height = height
         
-        # (기록용 deque들)
+        # (기록용 deque들...)
         self.hist_t = deque(maxlen=5)
         self.hist_lw = deque(maxlen=5); self.hist_rw = deque(maxlen=5)
         self.hist_ls = deque(maxlen=5); self.hist_rs = deque(maxlen=5)
         self.hist_le = deque(maxlen=5); self.hist_re = deque(maxlen=5)
 
-        # --- (수정) calib_data 구조 및 기본값 변경 ---
+        # 캘리브레이션 데이터 (기본값)
         self.calib_data = {
             "shoulder_w": 300,
             "head_center": (int(width * 0.5), int(height * 0.35)),
             "head_radius": int(width * 0.08),
             "duck_line_y": int(height * 0.5)
         }
-        # --- (수정 끝) ---
         
-        # --- (수정) config 값 로드 방식 변경 ---
         rules = config_rules["action_thresholds"]
         self.REFRACTORY = rules["action_refractory"]
         self.V_THRESH = rules["action_v_thresh"]
         self.ANG_THRESH = rules["action_ang_thresh"]
-        # (참고) DUCK_LINE_OFFSET_RATIO는 더 이상 여기서 사용 안 함
-        # --- (수정 끝) ---
         
         self.last_hit_t = {"L": 0.0, "R": 0.0}
 
     def _angle(self, a, b, c):
-        # (3점 사이의 각도 계산)
+        # (1단계와 동일)
         a = np.array(a); b = np.array(b); c = np.array(c)
         ab = a - b; cb = c - b
         denom = (np.linalg.norm(ab) * np.linalg.norm(cb) + 1e-6)
         cosang = np.dot(ab, cb) / denom
         return math.degrees(math.acos(np.clip(cosang, -1.0, 1.0)))
 
-    # --- (수정) 캘리브레이션 메서드 전체 변경 ---
     def calibrate_from_pose(self, pose_landmarks):
         """
         안정화된 단일 포즈(landmarks)를 기반으로 캘리브레이션을 수행합니다.
-        (기존: calibrate_from_frames)
         """
         print("Calibrating from stable pose...")
         if not pose_landmarks:
@@ -73,21 +68,11 @@ class PoseTracker:
             R_SH = P(mp_pose.PoseLandmark.RIGHT_SHOULDER)
             NOSE = P(mp_pose.PoseLandmark.NOSE)
             
-            # 1. 평균 어깨 너비 계산
             shoulder_w = np.linalg.norm(np.array(L_SH) - np.array(R_SH))
-            
-            # 2. 헤드 서클 (코 기준)
             head_center = (int(NOSE[0]), int(NOSE[1]))
-            
-            # 3. 헤드 반지름 (어깨 너비의 40%로 유추)
-            # (요구사항: "얼굴 사이즈를 유추한 원", "추후 얼굴 모양")
             head_radius = int(shoulder_w * 0.4) 
-            
-            # 4. 더킹 라인 (캘리브레이션된 머리 '바닥' 기준)
-            # (head_circle의 y + radius)
             duck_line_y = head_center[1] + head_radius
             
-            # 계산된 값 저장
             self.calib_data["shoulder_w"] = shoulder_w
             self.calib_data["head_center"] = head_center
             self.calib_data["head_radius"] = head_radius
@@ -97,14 +82,16 @@ class PoseTracker:
 
         except Exception as e:
             print(f"Calibration Error: {e}. Using default values.")
-    # --- (수정 끝) ---
 
     def process_frame(self, frame, now):
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         res = self.pose.process(rgb)
         hit_events = []
+        
+        # --- (수정) 마스크가 없을 때도 None 반환 ---
         if not res.pose_landmarks:
-            return hit_events, None
+            return hit_events, None, None
+        # --- (수정 끝) ---
         
         lm = res.pose_landmarks.landmark
         def P(i): return (lm[i].x * self.width, lm[i].y * self.height)
@@ -115,7 +102,9 @@ class PoseTracker:
             LE, RE = P(mp_pose.PoseLandmark.LEFT_ELBOW),   P(mp_pose.PoseLandmark.RIGHT_ELBOW)
             NOSE   = P(mp_pose.PoseLandmark.NOSE)
         except Exception:
-            return hit_events, res.pose_landmarks
+            # --- (수정) 마스크 함께 반환 ---
+            return hit_events, res.pose_landmarks, res.segmentation_mask
+            # --- (수정 끝) ---
 
         mp_drawing.draw_landmarks(
             frame, res.pose_landmarks, mp_pose.POSE_CONNECTIONS,
@@ -128,13 +117,12 @@ class PoseTracker:
             h.append(v)
             
         if len(self.hist_t) < 2:
-            return hit_events, res.pose_landmarks
+            # --- (수정) 마스크 함께 반환 ---
+            return hit_events, res.pose_landmarks, res.segmentation_mask
+            # --- (수정 끝) ---
 
         dt = self.hist_t[-1] - self.hist_t[-2]
-        
-        # --- (수정) 캘리브레이션된 어깨너비 사용 ---
         sw = self.calib_data["shoulder_w"]
-        # --- (수정 끝) ---
 
         def radial_speed(S, W, prevW):
             r_now = np.linalg.norm(np.array(W) - np.array(S)) / sw
@@ -156,10 +144,9 @@ class PoseTracker:
             hit_events.append({"type": "JAB_R", "t_hit": now})
             self.last_hit_t["R"] = now
 
-        # --- (수정) 더킹 기준선 변경 ---
-        # 캘리브레이션된 'duck_line_y' (머리 바닥)을 기준으로 함
         if NOSE[1] > self.calib_data["duck_line_y"]: 
              hit_events.append({"type": "DUCK", "t_hit": now})
-        # --- (수정 끝) ---
 
-        return hit_events, res.pose_landmarks
+        # --- (수정) 마스크 함께 반환 ---
+        return hit_events, res.pose_landmarks, res.segmentation_mask
+        # --- (수정 끝) ---
