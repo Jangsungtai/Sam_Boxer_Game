@@ -15,5 +15,7 @@
     "action_refractory": 0.25,
     "action_v_thresh": 1.0,
     "action_ang_thresh": 160
-  }
+  },
+
+  "calibration_hold_time": 3.0
 }

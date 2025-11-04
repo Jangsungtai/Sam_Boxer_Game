@@ -1,4 +1,3 @@
-
 # Python
 venv/
 *.pyc
@@ -14,4 +13,3 @@ __pycache__/
 dist/
 build/
 *.spec
-EOT

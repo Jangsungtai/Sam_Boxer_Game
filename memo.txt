@@ -1,3 +1,5 @@
+python -m scenes.game_scene
+
 
 # (터미널에서 beat_boxer_game 폴더로 이동한 후 실행)
 

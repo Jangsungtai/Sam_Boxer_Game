@@ -116,3 +116,11 @@ MainMenuScene 구현: 곡 선택, 난이도 선택 UI.
 ResultScene 구현: 최종 점수, 최대 콤보, 랭크(A, B, C) 표시.
 
 최종 정리: main.py는 이제 SceneManager를 실행하는 역할만 하도록 정리합니다.
+
+
+
+코(NOSE): 0번
+
+왼쪽 손목 (LEFT_WRIST): 15번
+
+오른쪽 손목 (RIGHT_WRIST): 16번

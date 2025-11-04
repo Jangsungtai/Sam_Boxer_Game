@@ -21,74 +21,85 @@ class PoseTracker:
         self.width = width
         self.height = height
         
-        # (기록용 deque들... 1단계와 동일)
+        # (기록용 deque들)
         self.hist_t = deque(maxlen=5)
         self.hist_lw = deque(maxlen=5); self.hist_rw = deque(maxlen=5)
         self.hist_ls = deque(maxlen=5); self.hist_rs = deque(maxlen=5)
         self.hist_le = deque(maxlen=5); self.hist_re = deque(maxlen=5)
 
-        # 캘리브레이션 데이터 (기본값)
+        # --- (수정) calib_data 구조 및 기본값 변경 ---
         self.calib_data = {
             "shoulder_w": 300,
+            "head_center": (int(width * 0.5), int(height * 0.35)),
+            "head_radius": int(width * 0.08),
             "duck_line_y": int(height * 0.5)
         }
+        # --- (수정 끝) ---
         
-        # --- (수정) 하드코딩 대신 config 값 사용 ---
+        # --- (수정) config 값 로드 방식 변경 ---
         rules = config_rules["action_thresholds"]
         self.REFRACTORY = rules["action_refractory"]
         self.V_THRESH = rules["action_v_thresh"]
         self.ANG_THRESH = rules["action_ang_thresh"]
-        self.DUCK_LINE_OFFSET_RATIO = config_ui["positions"]["duck_line_shoulder_offset_ratio"]
+        # (참고) DUCK_LINE_OFFSET_RATIO는 더 이상 여기서 사용 안 함
         # --- (수정 끝) ---
         
         self.last_hit_t = {"L": 0.0, "R": 0.0}
 
     def _angle(self, a, b, c):
-        # (1단계와 동일)
+        # (3점 사이의 각도 계산)
         a = np.array(a); b = np.array(b); c = np.array(c)
         ab = a - b; cb = c - b
         denom = (np.linalg.norm(ab) * np.linalg.norm(cb) + 1e-6)
         cosang = np.dot(ab, cb) / denom
         return math.degrees(math.acos(np.clip(cosang, -1.0, 1.0)))
 
-    def calibrate_from_frames(self, calibration_frames):
-        # (1단계와 동일... 로직은 같음)
-        print("Calibrating...")
-        sum_sw, sum_sh_y, n = 0.0, 0.0, 0
-        
-        for frame in calibration_frames:
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            res = self.pose.process(rgb)
+    # --- (수정) 캘리브레이션 메서드 전체 변경 ---
+    def calibrate_from_pose(self, pose_landmarks):
+        """
+        안정화된 단일 포즈(landmarks)를 기반으로 캘리브레이션을 수행합니다.
+        (기존: calibrate_from_frames)
+        """
+        print("Calibrating from stable pose...")
+        if not pose_landmarks:
+            print("Calibration Failed: No pose data provided. Using defaults.")
+            return
+
+        lm = pose_landmarks.landmark
+        def P(i): return (lm[i].x * self.width, lm[i].y * self.height)
+
+        try:
+            L_SH = P(mp_pose.PoseLandmark.LEFT_SHOULDER)
+            R_SH = P(mp_pose.PoseLandmark.RIGHT_SHOULDER)
+            NOSE = P(mp_pose.PoseLandmark.NOSE)
             
-            if res.pose_landmarks:
-                lm = res.pose_landmarks.landmark
-                try:
-                    L_SH = (lm[mp_pose.PoseLandmark.LEFT_SHOULDER].x * self.width,
-                            lm[mp_pose.PoseLandmark.LEFT_SHOULDER].y * self.height)
-                    R_SH = (lm[mp_pose.PoseLandmark.RIGHT_SHOULDER].x * self.width,
-                            lm[mp_pose.PoseLandmark.RIGHT_SHOULDER].y * self.height)
-                    
-                    sum_sw += np.linalg.norm(np.array(L_SH) - np.array(R_SH))
-                    sum_sh_y += min(L_SH[1], R_SH[1])
-                    n += 1
-                except Exception as e:
-                    pass
-        
-        if n > 0:
-            avg_sw = sum_sw / n
-            avg_sh_y = sum_sh_y / n
+            # 1. 평균 어깨 너비 계산
+            shoulder_w = np.linalg.norm(np.array(L_SH) - np.array(R_SH))
             
-            self.calib_data["shoulder_w"] = avg_sw
-            # --- (수정) 하드코딩 대신 config 값 사용 ---
-            self.calib_data["duck_line_y"] = int(avg_sh_y + (avg_sw * self.DUCK_LINE_OFFSET_RATIO))
-            # --- (수정 끝) ---
+            # 2. 헤드 서클 (코 기준)
+            head_center = (int(NOSE[0]), int(NOSE[1]))
             
-            print(f"Calibration Done: ShoulderWidth={avg_sw:.1f}px, DuckLineY={self.calib_data['duck_line_y']}px")
-        else:
-            print("Calibration Failed: No pose detected. Using default values.")
+            # 3. 헤드 반지름 (어깨 너비의 40%로 유추)
+            # (요구사항: "얼굴 사이즈를 유추한 원", "추후 얼굴 모양")
+            head_radius = int(shoulder_w * 0.4) 
+            
+            # 4. 더킹 라인 (캘리브레이션된 머리 '바닥' 기준)
+            # (head_circle의 y + radius)
+            duck_line_y = head_center[1] + head_radius
+            
+            # 계산된 값 저장
+            self.calib_data["shoulder_w"] = shoulder_w
+            self.calib_data["head_center"] = head_center
+            self.calib_data["head_radius"] = head_radius
+            self.calib_data["duck_line_y"] = duck_line_y
+            
+            print(f"Calibration Done: ShoulderWidth={shoulder_w:.1f}px, Head=({head_center}, r={head_radius}), DuckLineY={duck_line_y}px")
+
+        except Exception as e:
+            print(f"Calibration Error: {e}. Using default values.")
+    # --- (수정 끝) ---
 
     def process_frame(self, frame, now):
-        # (1단계와 완벽히 동일. 수정 없음)
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         res = self.pose.process(rgb)
         hit_events = []
@@ -120,7 +131,10 @@ class PoseTracker:
             return hit_events, res.pose_landmarks
 
         dt = self.hist_t[-1] - self.hist_t[-2]
+        
+        # --- (수정) 캘리브레이션된 어깨너비 사용 ---
         sw = self.calib_data["shoulder_w"]
+        # --- (수정 끝) ---
 
         def radial_speed(S, W, prevW):
             r_now = np.linalg.norm(np.array(W) - np.array(S)) / sw
@@ -142,7 +156,10 @@ class PoseTracker:
             hit_events.append({"type": "JAB_R", "t_hit": now})
             self.last_hit_t["R"] = now
 
+        # --- (수정) 더킹 기준선 변경 ---
+        # 캘리브레이션된 'duck_line_y' (머리 바닥)을 기준으로 함
         if NOSE[1] > self.calib_data["duck_line_y"]: 
              hit_events.append({"type": "DUCK", "t_hit": now})
+        # --- (수정 끝) ---
 
         return hit_events, res.pose_landmarks

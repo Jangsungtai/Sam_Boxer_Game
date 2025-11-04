@@ -33,6 +33,7 @@ def get_best_camera_index():
             print(f"카메라 발견: 인덱스 {index}")
             cap.release() # 테스트 종료
             return index
+    
             
     print("기본 카메라(0번)를 찾지 못했습니다. 0번으로 시도합니다.")
     return 0
