@@ -311,7 +311,7 @@ class GameScene(BaseScene):
         
         # (수정) self.hit_zone이 매 프레임 업데이트되므로, 여기서 그릴 때 동적으로 그려짐
         hz_x, hz_y = self.hit_zone 
-        cv2.circle(frame, (hz_x, hz_y), 30, tuple(col_cfg["hit_zone"]), 2)
+        cv2.circle(frame, (hz_x, hz_y), 30, tuple(col_cfg["hit_zone"]), 6)
         
         score_pos = tuple(pos_cfg["score"]); score_text = f"Score: {self.state['score']}"; combo_text = f"Combo: {self.state['combo']}"
         cv2.putText(frame, score_text, score_pos, cv2.FONT_HERSHEY_SIMPLEX, 1, tuple(col_cfg["score_text"]), 3)
