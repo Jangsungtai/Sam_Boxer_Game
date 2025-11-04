@@ -2,6 +2,7 @@
 
 import pygame
 import os
+import numpy as np
 
 class AudioManager:
     def __init__(self):
@@ -17,6 +18,9 @@ class AudioManager:
             
         self.mixer_loaded = True
         self.sounds = {} # 효과음 캐시
+        
+        # 400Hz 비프음 생성 (테스트 모드용)
+        self._generate_beep()
 
     def load_sounds(self, sound_map):
         """
@@ -39,7 +43,34 @@ class AudioManager:
             except Exception as e:
                 print(f"  [실패] {name} 로드 실패: {e}")
 
-    def play_sfx(self, name):
+    def _generate_beep(self):
+        """400Hz 비프음을 생성합니다 (테스트 모드용)."""
+        if not self.mixer_loaded:
+            return
+        
+        try:
+            SAMPLE_RATE = 44100
+            DURATION = 0.1  # 100ms
+            FREQUENCY = 400
+            
+            num_samples = int(SAMPLE_RATE * DURATION)
+            
+            # 16비트 사운드 (최대 32767)
+            buf = np.zeros((num_samples, 2), dtype=np.int16)
+            
+            # 스테레오 (양쪽 채널)
+            for i in range(num_samples):
+                t = float(i) / SAMPLE_RATE
+                sample = np.sin(2 * np.pi * FREQUENCY * t) * 0.5  # 50% 볼륨
+                sample_int = int(sample * 32767)
+                buf[i] = [sample_int, sample_int]
+            
+            self.sounds['BEEP'] = pygame.sndarray.make_sound(buf)
+            print("Audio Manager: 400Hz 비프음 생성 완료")
+        except Exception as e:
+            print(f"비프음 생성 오류: {e}")
+    
+    def play_sfx(self, name, loops=0):
         """효과음을 재생합니다."""
         if not self.mixer_loaded or name not in self.sounds:
             return
@@ -47,7 +78,7 @@ class AudioManager:
         try:
             # 기존 소리가 나고 있으면 중지하고 새로 재생 (타격감 향상)
             self.sounds[name].stop() 
-            self.sounds[name].play()
+            self.sounds[name].play(loops=loops)
         except Exception as e:
             print(f"SFX 재생 오류: {name}, {e}")
 

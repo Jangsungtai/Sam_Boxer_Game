@@ -1,9 +1,10 @@
 {
-  "judge_timing": {
-    "perfect": 0.10,
-    "great": 0.18,
-    "good": 0.25
-  },
+  "test_mode": true,
+  "spatial_judge_mode": 2,
+  "timing_offset": -0.15,
+  "//": "시스템 지연 보상값 (초). 음수 = 판정을 더 일찍 (예: -0.15초)",
+  "// 1": "손목(Wrist)만 판정 (어려움)",
+  "// 2": "손 랜드마크 4개(Wrist, Pinky, Index, Thumb) 중 하나라도 닿으면 판정 (쉬움)",
   "score_base": {
     "PERFECT": 300,
     "GREAT": 200,

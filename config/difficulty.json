@@ -1,5 +1,14 @@
 {
   "default": "Normal",
+  "song_info": {
+    "bpm": 30,
+    "division": 4
+  },
+  "judge_timing_base": {
+    "perfect": 0.50,
+    "great": 0.75,
+    "good": 3.00
+  },
   "levels": {
     "Easy": {
       "pre_spawn_time": 1.5,

@@ -41,7 +41,22 @@ class PoseTracker:
         self.V_THRESH = rules["action_v_thresh"]
         self.ANG_THRESH = rules["action_ang_thresh"]
         
+        self.test_mode = config_rules.get("test_mode", False)
         self.last_hit_t = {"L": 0.0, "R": 0.0}
+        
+        # config_rules 저장 (spatial_judge_mode 접근용)
+        self.config_rules = config_rules
+        
+        # 테스트 모드: 손이 히트존 밖에 있었는지 추적
+        self.left_was_outside_hit_zone = False
+        self.right_was_outside_hit_zone = False
+        
+        # 히트존 정보 가져오기
+        hud_styles = config_ui.get("styles", {}).get("hud", {})
+        hit_zone_pos_ratio = config_ui.get("positions", {}).get("hit_zone", {}).get("pos_ratio", [0.5, 0.3])
+        self.hit_zone_x = int(width * hit_zone_pos_ratio[0])
+        self.hit_zone_y = int(height * hit_zone_pos_ratio[1])
+        self.hit_zone_radius = int(hud_styles.get("hit_zone_radius", 100))
 
     def _angle(self, a, b, c):
         # (1단계와 동일)
@@ -134,15 +149,89 @@ class PoseTracker:
         angL = self._angle(LS, LE, LW); angR = self._angle(RS, RE, RW)
         
         hit_zone_x = self.width // 2
-        left_zone = LW[0] < hit_zone_x; right_zone = RW[0] > hit_zone_x
+        # (수정) cv2.flip을 고려하여 반대로 판단:
+        # JAB_L (화면 왼쪽 펀치)는 실제 오른손이 화면 왼쪽에 있을 때 발생
+        # JAB_R (화면 오른쪽 펀치)는 실제 왼손이 화면 오른쪽에 있을 때 발생
+        left_zone_for_jab_l = RW[0] < hit_zone_x  # 실제 오른손이 화면 왼쪽에 있으면
+        right_zone_for_jab_r = LW[0] > hit_zone_x  # 실제 왼손이 화면 오른쪽에 있으면
 
-        if (vL >= self.V_THRESH and angL >= self.ANG_THRESH and left_zone and (now - self.last_hit_t["L"] > self.REFRACTORY)):
-            hit_events.append({"type": "JAB_L", "t_hit": now})
-            self.last_hit_t["L"] = now
+        if self.test_mode:
+            # 테스트 모드: 손의 중심점이 히트존을 나갔다가 다시 들어온 것을 감지
+            # spatial_judge_mode에 따라 손의 중심점 계산
+            spatial_mode = self.config_rules.get("spatial_judge_mode", 2)
+            
+            # 왼손 중심점 계산 (JAB_R에 사용)
+            left_wrist = LW
+            left_pinky = P(mp_pose.PoseLandmark.LEFT_PINKY) if spatial_mode == 2 else None
+            left_index = P(mp_pose.PoseLandmark.LEFT_INDEX) if spatial_mode == 2 else None
+            left_thumb = P(mp_pose.PoseLandmark.LEFT_THUMB) if spatial_mode == 2 else None
+            
+            if spatial_mode == 1:
+                left_center = left_wrist
+            else:
+                left_points = [p for p in [left_wrist, left_pinky, left_index, left_thumb] if p is not None]
+                if left_points:
+                    left_center = (np.mean([p[0] for p in left_points]), np.mean([p[1] for p in left_points]))
+                else:
+                    left_center = None
+            
+            # 오른손 중심점 계산 (JAB_L에 사용)
+            right_wrist = RW
+            right_pinky = P(mp_pose.PoseLandmark.RIGHT_PINKY) if spatial_mode == 2 else None
+            right_index = P(mp_pose.PoseLandmark.RIGHT_INDEX) if spatial_mode == 2 else None
+            right_thumb = P(mp_pose.PoseLandmark.RIGHT_THUMB) if spatial_mode == 2 else None
+            
+            if spatial_mode == 1:
+                right_center = right_wrist
+            else:
+                right_points = [p for p in [right_wrist, right_pinky, right_index, right_thumb] if p is not None]
+                if right_points:
+                    right_center = (np.mean([p[0] for p in right_points]), np.mean([p[1] for p in right_points]))
+                else:
+                    right_center = None
+            
+            # 히트존 안에 있는지 확인
+            def is_inside_hit_zone(center):
+                if center is None:
+                    return False
+                dist = np.sqrt((center[0] - self.hit_zone_x)**2 + (center[1] - self.hit_zone_y)**2)
+                return dist <= self.hit_zone_radius
+            
+            # JAB_L: 실제 오른손이 히트존을 나갔다가 다시 들어온 경우
+            if right_center:
+                right_inside = is_inside_hit_zone(right_center)
+                if not self.right_was_outside_hit_zone and not right_inside:
+                    # 히트존 밖으로 나감
+                    self.right_was_outside_hit_zone = True
+                elif self.right_was_outside_hit_zone and right_inside and left_zone_for_jab_l:
+                    # 히트존 밖에 있다가 다시 안으로 들어옴 (펀치 감지)
+                    if (now - self.last_hit_t["L"] > self.REFRACTORY):
+                        hit_events.append({"type": "JAB_L", "t_hit": now})
+                        self.last_hit_t["L"] = now
+                        self.right_was_outside_hit_zone = False
+            
+            # JAB_R: 실제 왼손이 히트존을 나갔다가 다시 들어온 경우
+            if left_center:
+                left_inside = is_inside_hit_zone(left_center)
+                if not self.left_was_outside_hit_zone and not left_inside:
+                    # 히트존 밖으로 나감
+                    self.left_was_outside_hit_zone = True
+                elif self.left_was_outside_hit_zone and left_inside and right_zone_for_jab_r:
+                    # 히트존 밖에 있다가 다시 안으로 들어옴 (펀치 감지)
+                    if (now - self.last_hit_t["R"] > self.REFRACTORY):
+                        hit_events.append({"type": "JAB_R", "t_hit": now})
+                        self.last_hit_t["R"] = now
+                        self.left_was_outside_hit_zone = False
+        else:
+            # 일반 모드: 기존 로직 (속도, 각도, 구역, 쿨타임 모두 체크)
+            # (수정) cv2.flip을 고려하여 반대로 판단
+            if (vL >= self.V_THRESH and angL >= self.ANG_THRESH and left_zone_for_jab_l and (now - self.last_hit_t["L"] > self.REFRACTORY)):
+                hit_events.append({"type": "JAB_L", "t_hit": now})
+                self.last_hit_t["L"] = now
 
-        if (vR >= self.V_THRESH and angR >= self.ANG_THRESH and right_zone and (now - self.last_hit_t["R"] > self.REFRACTORY)):
-            hit_events.append({"type": "JAB_R", "t_hit": now})
-            self.last_hit_t["R"] = now
+            if (vR >= self.V_THRESH and angR >= self.ANG_THRESH and right_zone_for_jab_r and (now - self.last_hit_t["R"] > self.REFRACTORY)):
+                hit_events.append({"type": "JAB_R", "t_hit": now})
+                self.last_hit_t["R"] = now
 
         if NOSE[1] > self.calib_data["duck_line_y"]: 
              hit_events.append({"type": "DUCK", "t_hit": now})

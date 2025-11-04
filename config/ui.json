@@ -11,6 +11,9 @@
       "GREAT": [0, 255, 0],
       "GOOD": [255, 128, 0],
       "MISS": [0, 0, 255],
+      "area": [0, 0, 255],
+      "timing": [0, 0, 255],
+      "area/timing": [0, 0, 255],
       "BOMB!": [128, 0, 255]
     },
     "hud": {
@@ -21,7 +24,10 @@
     }
   },
   "positions": {
-    "hit_zone_ratio": [0.5, 0.6],
+    "hit_zone": {
+      "pos_ratio": [0.5, 0.22],
+      "//": "히트존 중심 위치 (화면 비율: 가로, 세로). [0.5, 0.5] = 화면 중앙"
+    },
     "duck_line_shoulder_offset_ratio": 0.25,
     "score": [20, 40],
     "combo": "auto_right",
@@ -29,17 +35,64 @@
 
     "calibration_targets": {
       "head": {
-        "pos_ratio": [0.5, 0.30],
-        "radius_ratio_w": 0.07
+        "pos_ratio": [0.5, 0.35],
+        "radius_ratio_w": 0.05
       },
       "left_fist": {
-        "pos_ratio": [0.2, 0.45],
+        "pos_ratio": [0.2, 0.50],
         "radius_ratio_w": 0.05
       },
       "right_fist": {
-        "pos_ratio": [0.8, 0.45],
+        "pos_ratio": [0.8, 0.50],
         "radius_ratio_w": 0.05
       }
     }
+  },
+  "styles": {
+    "hud": {
+      "hit_zone_radius": 100,
+      "hit_zone_thickness": 6
+    },
+    "notes": {
+      "circle_radius": 55,
+      "circle_outline_thickness": 5,
+      "duck_half_width": 100,
+      "duck_half_height": 15,
+      "duck_outline_thickness": 2,
+      "label_font_scale_circle": 0.9,
+      "label_font_scale_duck": 0.8,
+      "label_outline_thickness": 3,
+      "label_fill_thickness": 2
+    }
+  },
+  "__comments": {
+    "colors": "UI 색상 설정 (OpenCV BGR 순서)",
+    "colors.notes": "노트 타입별 기본 색상",
+    "colors.judgement": "판정 텍스트 색상",
+    "colors.hud": "HUD 요소 색상",
+    "colors.hud.duck_line": "숙이기 기준선 색상",
+    "colors.hud.hit_zone": "히트 존(원) 색상",
+    "colors.hud.score_text": "스코어 텍스트 색상",
+    "colors.hud.combo_text": "콤보 텍스트 색상",
+    "positions": "화면 내 요소들의 상대 위치/비율 설정",
+    "positions.hit_zone": "히트존 중심 위치 (정적 위치, 화면 비율)",
+    "positions.duck_line_shoulder_offset_ratio": "어깨 기준 숙이기 라인 오프셋 비율",
+    "positions.score": "스코어 텍스트 좌표 (px)",
+    "positions.combo": "콤보 텍스트 위치 규칙 ('auto_right' 또는 좌표)",
+    "positions.judge_log_start": "판정 로그 시작 좌표 (px)",
+    "positions.calibration_targets": "캘리브레이션 UI 타겟 위치/반경 (비율 기반)",
+    "styles": "스타일(크기/두께 등) 설정",
+    "styles.hud.hit_zone_radius": "히트 존 원의 반지름(px)",
+    "styles.hud.hit_zone_thickness": "히트 존 원의 선 두께(px). 채우기는 -1",
+    "styles.notes": "노트 도형/텍스트 크기와 두께",
+    "styles.notes.circle_radius": "원형 노트 반지름(px)",
+    "styles.notes.circle_outline_thickness": "원형 노트 외곽선 두께(px)",
+    "styles.notes.duck_half_width": "DUCK 바의 반폭(px)",
+    "styles.notes.duck_half_height": "DUCK 바의 반높이(px)",
+    "styles.notes.duck_outline_thickness": "DUCK 바 외곽선 두께(px)",
+    "styles.notes.label_font_scale_circle": "원형 노트 라벨 폰트 스케일",
+    "styles.notes.label_font_scale_duck": "DUCK 라벨 폰트 스케일",
+    "styles.notes.label_outline_thickness": "라벨 외곽선 두께",
+    "styles.notes.label_fill_thickness": "라벨 내부 두께"
   }
 }
