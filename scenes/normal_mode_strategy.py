@@ -7,8 +7,8 @@ from scenes.game_mode_strategy import GameModeStrategy
 class NormalModeStrategy(GameModeStrategy):
     """일반 모드 전략: 일반 게임플레이 판정 및 시각화"""
     
-    def handle_hits(self, hit_events, t_game, now):
-        """일반 모드: 공간 + 타이밍 모두 체크, 노트가 히트존에 도달했는지 확인"""
+    def handle_hits(self, hit_events, t_game, now, **kwargs):
+        """일반 모드: 공간 + 타이밍 모두 체크, 노트가 히트존에 도달했는지 확인 (Phase 2: kwargs 추가)"""
         for ev in hit_events:
             ev_type = ev["type"]
             t_hit = ev["t_hit"]
@@ -90,83 +90,24 @@ class NormalModeStrategy(GameModeStrategy):
                     target_note.judge_result = "timing"
                     self.game_scene._add_judgement("timing", target_note.typ, dt=dt, pos=(target_note.x, target_note.y))
     
-    def draw_hud(self, frame):
-        """일반 모드: 깔끔한 HUD (디버그 정보 제외)"""
-        ui_cfg = self.game_scene.config_ui
-        pos_cfg = ui_cfg["positions"]
-        col_cfg = ui_cfg["colors"]["hud"]
-        hud_styles = ui_cfg.get("styles", {}).get("hud", {})
-        hit_zone_radius = int(getattr(self.game_scene, "hit_zone_radius", hud_styles.get("hit_zone_radius", 30)))
-        hit_zone_thickness = int(hud_styles.get("hit_zone_thickness", 6))
+    def _draw_mode_specific_hud(self, frame):
+        """일반 모드: 랜드마크 시각화만 추가 (Phase 2: 공통 로직은 부모 클래스에서 처리)"""
+        # Phase 1: 스무딩된 랜드마크는 PoseTracker에서 가져옴
+        smoothed_landmarks = self.game_scene.pose_tracker.get_smoothed_landmarks()
+        left_fist, right_fist = self.game_scene.pose_tracker.get_fist_centroids()
         
-        duck_y = self.game_scene.duck_line_y
-        cv2.line(frame, (0, duck_y), (self.game_scene.width, duck_y), tuple(col_cfg["duck_line"]), 2)
-        cv2.putText(frame, "DUCK LINE", (10, duck_y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, tuple(col_cfg["duck_line"]), 2)
-        
-        hz_x, hz_y = self.game_scene.hit_zone
-        
-        # 판정 결과에 따라 히트존 색상 및 두께 변경
-        last_judgement = self.game_scene.last_judgement
-        base_thickness = hit_zone_thickness  # 기본 두께 저장
-        
-        if last_judgement == "PERFECT":
-            hit_zone_color = (0, 255, 255)  # 노란색 (BGR)
-            hit_zone_thickness = base_thickness * 2  # 선 두껍게
-        elif last_judgement == "GREAT":
-            hit_zone_color = (0, 255, 0)  # 녹색 (BGR)
-        elif last_judgement == "GOOD":
-            hit_zone_color = (255, 0, 0)  # 파란색 (BGR)
-        elif last_judgement == "MISS":
-            hit_zone_color = (0, 0, 255)  # 빨간색 (BGR)
-        else:
-            hit_zone_color = (128, 128, 128)  # 회색 (BGR) - 평상시
-        
-        cv2.circle(frame, (hz_x, hz_y), hit_zone_radius, hit_zone_color, hit_zone_thickness)
-        
-        # 히트존 원 위에 최근 판정 결과 하나만 표시
-        if self.game_scene.floating_judgement_logs:
-            text, color, _ = self.game_scene.floating_judgement_logs[0]
-            text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
-            text_x = hz_x - (text_size[0] // 2)
-            text_y = hz_y - (hit_zone_radius + 40)  # 히트존 원 위에 표시
-            cv2.putText(frame, text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2)
-        
-        # 랜드마크 시각화 (코, 손 중앙점만 표시, 연결선 제외)
-        nose_pos = self.game_scene.smoothed_landmark_pos.get("nose")
+        nose_pos = smoothed_landmarks.get("nose")
         if nose_pos:
             nx, ny = int(nose_pos[0]), int(nose_pos[1])
             cv2.circle(frame, (nx, ny), 8, (0, 255, 255), -1)  # 노란색 원
         
-        if self.game_scene.left_fist_center:
-            lx, ly = self.game_scene.left_fist_center
+        if left_fist:
+            lx, ly = left_fist
             cv2.circle(frame, (lx, ly), 10, (0, 0, 255), 2)  # 빨간색 원 (연결선 없음)
         
-        if self.game_scene.right_fist_center:
-            rx, ry = self.game_scene.right_fist_center
+        if right_fist:
+            rx, ry = right_fist
             cv2.circle(frame, (rx, ry), 10, (0, 0, 255), 2)  # 빨간색 원 (연결선 없음)
-        
-        # Score, Combo 표시
-        score_pos = tuple(pos_cfg["score"])
-        score_text = f"Score: {self.game_scene.state['score']}"
-        combo_text = f"Combo: {self.game_scene.state['combo']}"
-        cv2.putText(frame, score_text, score_pos, cv2.FONT_HERSHEY_SIMPLEX, 1, tuple(col_cfg["score_text"]), 3)
-        (text_width, _), _ = cv2.getTextSize(combo_text, cv2.FONT_HERSHEY_SIMPLEX, 1, 3)
-        combo_pos = (self.game_scene.width - text_width - 20, score_pos[1])
-        cv2.putText(frame, combo_text, combo_pos, cv2.FONT_HERSHEY_SIMPLEX, 1, tuple(col_cfg["combo_text"]), 3)
-        
-        # 판정 통계 표시
-        judgement_colors = ui_cfg.get("colors", {}).get("judgement", {})
-        stats_y = score_pos[1] + 50
-        font_scale = 0.7
-        thickness = 2
-        line_spacing = 30
-        
-        for i, judge_type in enumerate(["PERFECT", "GREAT", "GOOD", "MISS"]):
-            count = self.game_scene.judgement_stats.get(judge_type, 0)
-            text = f"{judge_type}: {count}"
-            color = tuple(judgement_colors.get(judge_type, [255, 255, 255]))
-            y_pos = stats_y + (i * line_spacing)
-            cv2.putText(frame, text, (score_pos[0], y_pos), cv2.FONT_HERSHEY_SIMPLEX, font_scale, color, thickness)
     
     def draw_additional(self, frame, now):
         """일반 모드: 추가 시각화 없음"""
@@ -180,7 +121,5 @@ class NormalModeStrategy(GameModeStrategy):
         """일반 모드: 추가 처리 없음"""
         pass
     
-    def calculate_debug_info(self, active_notes, hit_zone, smoothed_landmark_pos, start_time, now):
-        """일반 모드: 디버그 정보 계산 없음"""
-        pass
+    # Phase 2: calculate_debug_info 제거 (GameScene에서 계산)
 

@@ -42,34 +42,37 @@ class GameScene(BaseScene):
         song_info = self.config_difficulty.get("song_info", {})
         bpm = float(song_info.get("bpm", 120))
         
-        # --- (추가) BPM 스케일링 계산 (30~100 BPM 범위 대응) ---
-        # BPM 60을 기준으로 하여, BPM에 따라 판정 시간과 스폰 시간을 자동 조정
-        # 비선형 스케일링 (지수 0.7)을 사용하여 극단적인 BPM에서도 플레이 가능하도록 함
-        reference_bpm = 60.0  # 기준 BPM
-        bpm_scale = (reference_bpm / max(1.0, bpm)) ** 0.7  # 비선형 스케일 (지수 0.7)
-        bpm_scale = max(0.5, min(2.0, bpm_scale))  # 최소 0.5배, 최대 2.0배로 제한
+        # Phase 3: 박자 단위를 초 단위로 변환 (BPM 기반)
+        seconds_per_beat = 60.0 / max(1e-6, bpm)
         
-        # BPM 범위 경고 (30~100 범위를 벗어나면 경고)
-        if bpm < 30 or bpm > 100:
-            print(f"[경고] BPM이 권장 범위(30~100)를 벗어났습니다. 현재 BPM: {bpm}")
-        
-        # config/difficulty.json에서 기본값과 배율을 모두 가져옴
-        base_timing = self.config_difficulty.get("judge_timing_base", {"perfect": 0.5, "great": 0.75, "good": 1.0})
+        # 판정 시간: 박자 단위 → 초 단위
+        base_timing_beats = self.config_difficulty.get("judge_timing_base_beats", {
+            "perfect_beats": 0.5, 
+            "great_beats": 0.75, 
+            "good_beats": 1.0
+        })
         scale = self.difficulty.get("judge_timing_scale", 1.0)
-        # BPM 스케일을 판정 시간에 적용
-        self.judge_timing = {k: v * scale * bpm_scale for k, v in base_timing.items()}
         
-        # BPM 스케일을 스폰 시간에 적용
-        base_pre_spawn = self.difficulty["pre_spawn_time"]
-        self.pre_spawn_time = base_pre_spawn * bpm_scale
+        self.judge_timing = {}
+        for key, beats in base_timing_beats.items():
+            if key.endswith("_beats"):
+                # 박자 → 초 변환
+                seconds = beats * seconds_per_beat
+                # 난이도 배율 적용
+                timing_key = key.replace("_beats", "")
+                self.judge_timing[timing_key] = seconds * scale
+        
+        # 스폰 시간: 박자 단위 → 초 단위
+        pre_spawn_beats = self.difficulty.get("pre_spawn_beats", 2.0)
+        self.pre_spawn_time = pre_spawn_beats * seconds_per_beat
+        
         self.score_multiplier = self.difficulty["score_multiplier"]
         self.bomb_penalty = self.config_rules["bomb_penalty"]
         
         # 디버그 정보 출력
-        print(f"[BPM 스케일링] BPM: {bpm}, 스케일 팩터: {bpm_scale:.3f}, 판정 시간: {self.judge_timing}, 스폰 시간: {self.pre_spawn_time:.3f}s")
-        # --- (BPM 스케일링 끝) ---
+        print(f"[Phase 3: BPM 연동] BPM: {bpm}, 박자당 초: {seconds_per_beat:.3f}s, 판정 시간: {self.judge_timing}, 스폰 시간: {self.pre_spawn_time:.3f}s")
+        
         division = int(song_info.get("division", 4))
-        seconds_per_beat = 60.0 / max(1e-6, bpm)
         seconds_per_division = seconds_per_beat / max(1, division)
 
         rhythm_map = {
@@ -185,18 +188,9 @@ class GameScene(BaseScene):
         self.last_pose_landmarks = None
         self.calib_status = (False, False, False) # (head_ok, lw_ok, rw_ok)
         
-        self.calib_landmark_pos = {
-            "head_center": None, "nose": None, "left_eye_inner": None, "right_eye_inner": None,
-            "left_wrist": None, "right_wrist": None, 
-            "left_elbow": None, "right_elbow": None,
-            "shoulders": (None, None),
-            "left_ear": None, "right_ear": None,
-            "left_mouth": None, "right_mouth": None,
-            "left_index": None, "right_index": None,
-            "left_pinky": None, "right_pinky": None,
-            "left_thumb": None, "right_thumb": None
-        } 
-        self.smoothed_landmark_pos = self.calib_landmark_pos.copy()
+        # Phase 1: 랜드마크 데이터는 PoseTracker에서 관리
+        # self.calib_landmark_pos, self.smoothed_landmark_pos 제거
+        # self.left_fist_center, self.right_fist_center 제거
         
         self.base_ear_distance = 150.0 
         self.dynamic_size_ratio = 1.0 
@@ -204,10 +198,6 @@ class GameScene(BaseScene):
 
         self.head_angle = 0.0
         self.smoothed_head_angle = 0.0
-        
-        # 주먹 중심 좌표 (시각화용)
-        self.left_fist_center = None
-        self.right_fist_center = None
         
         print("GameScene: 게임 상태가 리셋되었습니다.")
 
@@ -244,9 +234,10 @@ class GameScene(BaseScene):
             if self.last_pose_landmarks:
                  self.pose_tracker.calibrate_from_pose(self.last_pose_landmarks)
                  self.duck_line_y = self.pose_tracker.calib_data['duck_line_y']
-                 if self.smoothed_landmark_pos["left_ear"] and self.smoothed_landmark_pos["right_ear"]:
-                    l_ear = np.array(self.smoothed_landmark_pos["left_ear"])
-                    r_ear = np.array(self.smoothed_landmark_pos["right_ear"])
+                 smoothed_landmarks = self.pose_tracker.get_smoothed_landmarks()
+                 if smoothed_landmarks.get("left_ear") and smoothed_landmarks.get("right_ear"):
+                    l_ear = np.array(smoothed_landmarks["left_ear"])
+                    r_ear = np.array(smoothed_landmarks["right_ear"])
                     self.base_ear_distance = np.linalg.norm(l_ear - r_ear)
                     print(f"Calibration Done (SKIPPED): Base Ear Distance set to {self.base_ear_distance:.1f}px")
                  else:
@@ -285,121 +276,20 @@ class GameScene(BaseScene):
         except Exception as e:
             pass 
 
-    def _check_calib_position(self, landmarks):
-        """랜드마크가 타겟 안에 있는지 확인하고, 현재 좌표도 반환합니다."""
-        
-        # --- (수정) positions 딕셔너리 구조 유지 ---
-        positions = {
-            "head_center": None, "nose": None, "left_eye_inner": None, "right_eye_inner": None,
-            "left_wrist": None, "right_wrist": None, 
-            "left_elbow": None, "right_elbow": None,
-            "shoulders": (None, None),
-            "left_ear": None, "right_ear": None,
-            "left_mouth": None, "right_mouth": None,
-            "left_index": None, "right_index": None
-        } 
-        # --- (수정 끝) ---
-        
-        if not landmarks:
-            return False, (False, False, False), positions
-
-        lm = landmarks.landmark
-        def P(i): return (lm[i].x * self.width, lm[i].y * self.height)
-        
-        try:
-            NOSE = P(mp_pose.PoseLandmark.NOSE) # (0)
-            L_EYE_INNER = P(mp_pose.PoseLandmark.LEFT_EYE_INNER) # (1)
-            R_EYE_INNER = P(mp_pose.PoseLandmark.RIGHT_EYE_INNER) # (4)
-            HEAD_CENTER = ( (L_EYE_INNER[0] + R_EYE_INNER[0]) / 2, (L_EYE_INNER[1] + R_EYE_INNER[1]) / 2 )
-            
-            L_WRIST = P(mp_pose.PoseLandmark.LEFT_WRIST) # (15)
-            R_WRIST = P(mp_pose.PoseLandmark.RIGHT_WRIST) # (16)
-            L_ELBOW = P(mp_pose.PoseLandmark.LEFT_ELBOW) # (13)
-            R_ELBOW = P(mp_pose.PoseLandmark.RIGHT_ELBOW) # (14)
-            L_SHOULDER = P(mp_pose.PoseLandmark.LEFT_SHOULDER) # (11)
-            R_SHOULDER = P(mp_pose.PoseLandmark.RIGHT_SHOULDER) # (12)
-            LEFT_EAR = P(mp_pose.PoseLandmark.LEFT_EAR) # (7)
-            RIGHT_EAR = P(mp_pose.PoseLandmark.RIGHT_EAR) # (8)
-            LEFT_MOUTH = P(mp_pose.PoseLandmark.MOUTH_LEFT) # (9)
-            RIGHT_MOUTH = P(mp_pose.PoseLandmark.MOUTH_RIGHT) # (10)
-            # 손가락 및 손 랜드마크 추가 수집
-            L_PINKY = P(mp_pose.PoseLandmark.LEFT_PINKY) # (17)
-            R_PINKY = P(mp_pose.PoseLandmark.RIGHT_PINKY) # (18)
-            L_INDEX = P(mp_pose.PoseLandmark.LEFT_INDEX) # (19)
-            R_INDEX = P(mp_pose.PoseLandmark.RIGHT_INDEX) # (20)
-            L_THUMB = P(mp_pose.PoseLandmark.LEFT_THUMB) # (21)
-            R_THUMB = P(mp_pose.PoseLandmark.RIGHT_THUMB) # (22)
-            
-            positions = {
-                "head_center": HEAD_CENTER, "nose": NOSE,
-                "left_eye_inner": L_EYE_INNER, "right_eye_inner": R_EYE_INNER,
-                "left_wrist": L_WRIST, "right_wrist": R_WRIST,
-                "left_elbow": L_ELBOW, "right_elbow": R_ELBOW,
-                "shoulders": (L_SHOULDER, R_SHOULDER),
-                "left_ear": LEFT_EAR, "right_ear": RIGHT_EAR,
-                "left_mouth": LEFT_MOUTH, "right_mouth": RIGHT_MOUTH,
-                "left_index": L_INDEX, "right_index": R_INDEX,
-                "left_pinky": L_PINKY, "right_pinky": R_PINKY,
-                "left_thumb": L_THUMB, "right_thumb": R_THUMB
-            }
-            
-        except Exception:
-            return False, (False, False, False), positions
-
-        def dist(p1, p2): 
-            return np.linalg.norm(np.array(p1) - np.array(p2))
-
-        target_h = self.calib_targets["head"]
-        target_l = self.calib_targets["left_fist"]
-        target_r = self.calib_targets["right_fist"]
-
-        head_ok = dist(NOSE, target_h["pos"]) < target_h["radius"]
-        
-        # (수정) 손목 대신 손의 중앙점을 사용하여 캘리브레이션 (게임 화면과 동일한 방식)
-        # spatial_judge_mode에 따라 손의 중앙점 계산
-        mode = int(self.config_rules.get("spatial_judge_mode", 2))
-        if mode == 1:
-            left_keys = ["left_wrist"]
-            right_keys = ["right_wrist"]
-        else:
-            left_keys = ["left_wrist", "left_pinky", "left_index", "left_thumb"]
-            right_keys = ["right_wrist", "right_pinky", "right_index", "right_thumb"]
-        
-        def calc_centroid(keys):
-            pts = [positions.get(k) for k in keys]
-            valid_points = [p for p in pts if p is not None]
-            if not valid_points:
-                return None
-            xs = [p[0] for p in valid_points]
-            ys = [p[1] for p in valid_points]
-            return (np.mean(xs), np.mean(ys))
-        
-        left_fist_center = calc_centroid(left_keys)
-        right_fist_center = calc_centroid(right_keys)
-        
-        # 손의 중앙점을 사용하여 캘리브레이션 확인 (cv2.flip 고려: 화면 왼쪽 = 실제 오른손, 화면 오른쪽 = 실제 왼손)
-        # left_fist_center = 실제 왼손, right_fist_center = 실제 오른손
-        lw_ok = False
-        rw_ok = False
-        
-        if right_fist_center:  # 화면 왼쪽 펀치 타겟 -> 실제 오른손 사용
-            lw_ok = dist(right_fist_center, target_l["pos"]) < target_l["radius"]
-        
-        if left_fist_center:  # 화면 오른쪽 펀치 타겟 -> 실제 왼손 사용
-            rw_ok = dist(left_fist_center, target_r["pos"]) < target_r["radius"]
-        
-        all_ok = head_ok and lw_ok and rw_ok
-        
-        return all_ok, (head_ok, lw_ok, rw_ok), positions
+    # Phase 4: _check_calib_position 메서드는 PoseTracker.check_calibration_position으로 이동됨
 
     def _hand_inside_hit_zone(self, ev_type):
-        """이벤트 타입(JAB_L/JAB_R)에 해당하는 손 랜드마크가 히트존 원 내부인지 확인합니다."""
+        """이벤트 타입(JAB_L/JAB_R)에 해당하는 손 랜드마크가 히트존 원 내부인지 확인합니다 (Phase 1)."""
         if not hasattr(self, "hit_zone") or not hasattr(self, "hit_zone_radius"):
             return False
         cx, cy = self.hit_zone
         radius = self.hit_zone_radius
         if radius <= 0:
             return False
+
+        # Phase 1: 스무딩된 랜드마크는 PoseTracker에서 가져옴
+        smoothed_landmarks = self.pose_tracker.get_smoothed_landmarks()
+        left_fist, right_fist = self.pose_tracker.get_fist_centroids()
 
         # 모드: 1=손목만, 2=손목/새끼/검지/엄지 중 하나라도
         # (수정) cv2.flip을 고려하여 반대로 확인: JAB_L은 오른쪽 랜드마크, JAB_R은 왼쪽 랜드마크
@@ -416,7 +306,7 @@ class GameScene(BaseScene):
         # (수정) 모든 랜드마크가 None인 경우를 명시적으로 처리
         valid_landmarks = []
         for key in landmark_keys:
-            pt = self.smoothed_landmark_pos.get(key)
+            pt = smoothed_landmarks.get(key)
             if pt is not None:
                 valid_landmarks.append((key, pt))
         
@@ -436,9 +326,9 @@ class GameScene(BaseScene):
         fist_center = None
         
         if ev_type == "JAB_L":  # 화면 왼쪽 펀치
-            fist_center = self.right_fist_center  # 사람의 오른쪽 손
+            fist_center = right_fist  # 사람의 오른쪽 손
         elif ev_type == "JAB_R":  # 화면 오른쪽 펀치
-            fist_center = self.left_fist_center  # 사람의 왼쪽 손
+            fist_center = left_fist  # 사람의 왼쪽 손
         
         if fist_center:
             dist = np.linalg.norm(np.array(fist_center) - hz_pos)
@@ -581,16 +471,18 @@ class GameScene(BaseScene):
     def update(self, frame, hit_events, landmarks, now):
         """포즈/상태를 갱신하고 씬 상태에 따라 게임 로직을 진행합니다."""
         
-        # 1. 랜드마크가 있으면 저장
+        # Phase 1: 랜드마크 스무딩은 PoseTracker에서 처리됨
         if landmarks:
             self.last_pose_landmarks = landmarks
         
-        # 2. 캘리브레이션 조준 확인
-        all_ok, self.calib_status, raw_landmark_pos = self._check_calib_position(landmarks)
+        # Phase 4: 캘리브레이션 조준 확인은 PoseTracker에서 처리
+        all_ok, self.calib_status, raw_landmark_pos = self.pose_tracker.check_calibration_position(self.calib_targets)
 
         # 3. '귀-귀' 벡터로 각도/크기 계산
-        raw_L_EAR = raw_landmark_pos.get("left_ear")
-        raw_R_EAR = raw_landmark_pos.get("right_ear")
+        # Phase 1: 스무딩된 랜드마크는 PoseTracker에서 가져옴
+        smoothed_landmarks = self.pose_tracker.get_smoothed_landmarks()
+        raw_L_EAR = smoothed_landmarks.get("left_ear")
+        raw_R_EAR = smoothed_landmarks.get("right_ear")
         
         if raw_L_EAR and raw_R_EAR:
             l_ear_pos = np.array(raw_L_EAR)
@@ -606,64 +498,11 @@ class GameScene(BaseScene):
             self.head_angle = 0.0
             self.dynamic_size_ratio = 1.0
         
-        # 4. 스무딩
-        SMOOTH_FACTOR = 0.7
-        
-        # --- (수정) 스무딩 로직 (어깨 튜플 처리) ---
-        for key in self.smoothed_landmark_pos.keys():
-            raw_pos = raw_landmark_pos.get(key)
-            prev_pos = self.smoothed_landmark_pos.get(key)
-            
-            if key == "shoulders":
-                raw_l, raw_r = raw_pos if raw_pos and None not in raw_pos else (None, None)
-                prev_l, prev_r = prev_pos if prev_pos and None not in prev_pos else (None, None)
-                
-                def smooth_point(raw, prev):
-                    if raw:
-                        if prev:
-                            x = prev[0] * (1.0 - SMOOTH_FACTOR) + raw[0] * SMOOTH_FACTOR
-                            y = prev[1] * (1.0 - SMOOTH_FACTOR) + raw[1] * SMOOTH_FACTOR
-                            return (x, y)
-                        return raw
-                    return None
-                    
-                self.smoothed_landmark_pos[key] = (smooth_point(raw_l, prev_l), smooth_point(raw_r, prev_r))
-                continue # 'shoulders' 키는 스무딩 후 건너뛰기
-
-            # (기존 랜드마크 스무딩)
-            if raw_pos:
-                if prev_pos:
-                    new_x = prev_pos[0] * (1.0 - SMOOTH_FACTOR) + raw_pos[0] * SMOOTH_FACTOR
-                    new_y = prev_pos[1] * (1.0 - SMOOTH_FACTOR) + raw_pos[1] * SMOOTH_FACTOR
-                    self.smoothed_landmark_pos[key] = (new_x, new_y)
-                else:
-                    self.smoothed_landmark_pos[key] = raw_pos
-            else:
-                self.smoothed_landmark_pos[key] = None
-        # --- (스무딩 로직 끝) ---
-        
-        # 주먹 중심(centroid) 계산 (spatial_judge_mode에 따라 사용되는 랜드마크 평균)
-        mode = int(self.config_rules.get("spatial_judge_mode", 2))
-        if mode == 1:
-            left_keys = ["left_wrist"]
-            right_keys = ["right_wrist"]
-        else:
-            left_keys = ["left_wrist", "left_pinky", "left_index", "left_thumb"]
-            right_keys = ["right_wrist", "right_pinky", "right_index", "right_thumb"]
-
-        def calc_centroid(keys):
-            pts = [self.smoothed_landmark_pos.get(k) for k in keys]
-            valid_points = [p for p in pts if p is not None]
-            if not valid_points:
-                return None
-            xs = [p[0] for p in valid_points]
-            ys = [p[1] for p in valid_points]
-            return (int(np.mean(xs)), int(np.mean(ys)))
-
-        self.left_fist_center = calc_centroid(left_keys)
-        self.right_fist_center = calc_centroid(right_keys)
+        # Phase 1: 주먹 중심점은 PoseTracker에서 계산됨
+        # self.left_fist_center, self.right_fist_center 제거
         
         # 각도/크기 스무딩
+        SMOOTH_FACTOR = 0.7
         self.smoothed_head_angle = self.smoothed_head_angle * (1.0 - SMOOTH_FACTOR) + self.head_angle * SMOOTH_FACTOR
         self.smoothed_dynamic_size_ratio = self.smoothed_dynamic_size_ratio * (1.0 - SMOOTH_FACTOR) + self.dynamic_size_ratio * SMOOTH_FACTOR
 
@@ -682,9 +521,11 @@ class GameScene(BaseScene):
                     self.pose_tracker.calibrate_from_pose(self.last_pose_landmarks)
                     self.duck_line_y = self.pose_tracker.calib_data['duck_line_y']
                     
-                    if self.smoothed_landmark_pos["left_ear"] and self.smoothed_landmark_pos["right_ear"]:
-                        l_ear = np.array(self.smoothed_landmark_pos["left_ear"])
-                        r_ear = np.array(self.smoothed_landmark_pos["right_ear"])
+                    # Phase 1: 스무딩된 랜드마크는 PoseTracker에서 가져옴
+                    smoothed_landmarks = self.pose_tracker.get_smoothed_landmarks()
+                    if smoothed_landmarks.get("left_ear") and smoothed_landmarks.get("right_ear"):
+                        l_ear = np.array(smoothed_landmarks["left_ear"])
+                        r_ear = np.array(smoothed_landmarks["right_ear"])
                         self.base_ear_distance = np.linalg.norm(l_ear - r_ear)
                         print(f"Calibration Done: Base Ear Distance set to {self.base_ear_distance:.1f}px")
                     else:
@@ -732,21 +573,16 @@ class GameScene(BaseScene):
                 self._handle_hits(hit_events, t_game)
             self._check_misses(t_game)
             
-            # Strategy 패턴: 모드별 디버그 정보 계산
-            self.mode_strategy.calculate_debug_info(
-                self.active_notes, 
-                self.hit_zone, 
-                self.smoothed_landmark_pos, 
-                self.state['start_time'], 
-                now
-            )
+            # Phase 2: 디버그 정보 계산은 GameScene에서 수행 (calculate_debug_info 제거)
+            # 필요 시 여기서 계산
 
     def _draw_equipment(self, frame):
         """
         현재 씬 상태와 랜드마크 위치에 따라 헤드기어만 그립니다.
         """
         draw_head = False
-        current_head_center_pos = self.smoothed_landmark_pos["head_center"]
+        smoothed_landmarks = self.pose_tracker.get_smoothed_landmarks()
+        current_head_center_pos = smoothed_landmarks.get("head_center")
 
         if self.scene_state == "CALIBRATING":
             draw_head = False 
@@ -810,19 +646,23 @@ class GameScene(BaseScene):
             cv2.circle(frame, target_r["pos"], target_r["radius"], color_ok if rw_ok else color_target, 2)
             
             # (수정) 캘리브레이션 화면에서 코, 양손의 중앙점 표시 (게임 화면과 동일한 방식)
-            nose_pos = self.smoothed_landmark_pos.get("nose")
+            # Phase 1: 스무딩된 랜드마크는 PoseTracker에서 가져옴
+            smoothed_landmarks = self.pose_tracker.get_smoothed_landmarks()
+            left_fist, right_fist = self.pose_tracker.get_fist_centroids()
+            
+            nose_pos = smoothed_landmarks.get("nose")
             
             if nose_pos:
                 nx, ny = int(nose_pos[0]), int(nose_pos[1])
                 cv2.circle(frame, (nx, ny), 8, (0, 255, 255), -1)  # 노란색 원
             
             # 손의 중앙점 표시 (spatial_judge_mode에 따라 계산된 중앙점 사용)
-            if self.left_fist_center:
-                lx, ly = self.left_fist_center
+            if left_fist:
+                lx, ly = left_fist
                 cv2.circle(frame, (lx, ly), 8, (0, 255, 255), -1)  # 노란색 원
             
-            if self.right_fist_center:
-                rx, ry = self.right_fist_center
+            if right_fist:
+                rx, ry = right_fist
                 cv2.circle(frame, (rx, ry), 8, (0, 255, 255), -1)  # 노란색 원
 
             text_pos = (self.width // 2 - 350, self.height // 2)

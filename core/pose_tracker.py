@@ -57,6 +57,25 @@ class PoseTracker:
         self.hit_zone_x = int(width * hit_zone_pos_ratio[0])
         self.hit_zone_y = int(height * hit_zone_pos_ratio[1])
         self.hit_zone_radius = int(hud_styles.get("hit_zone_radius", 100))
+        
+        # 랜드마크 스무딩 데이터 (Phase 1: 역할 확장)
+        self.smoothing_alpha = 0.7  # 스무딩 계수
+        self.calib_landmark_pos = {
+            "head_center": None, "nose": None, "left_eye_inner": None, "right_eye_inner": None,
+            "left_wrist": None, "right_wrist": None, 
+            "left_elbow": None, "right_elbow": None,
+            "shoulders": (None, None),
+            "left_ear": None, "right_ear": None,
+            "left_mouth": None, "right_mouth": None,
+            "left_index": None, "right_index": None,
+            "left_pinky": None, "right_pinky": None,
+            "left_thumb": None, "right_thumb": None
+        }
+        self.smoothed_landmark_pos = self.calib_landmark_pos.copy()
+        
+        # 주먹 중심점 (계산된 값)
+        self.left_fist_center = None
+        self.right_fist_center = None
 
     def _angle(self, a, b, c):
         # (1단계와 동일)
@@ -236,6 +255,221 @@ class PoseTracker:
         if NOSE[1] > self.calib_data["duck_line_y"]: 
              hit_events.append({"type": "DUCK", "t_hit": now})
 
+        # Phase 1: 랜드마크 스무딩 및 주먹 중심점 계산
+        if res.pose_landmarks:
+            self.update_landmark_smoothing(res.pose_landmarks)
+            self.calculate_fist_centroids()
+
         # --- (수정) 마스크 함께 반환 ---
         return hit_events, res.pose_landmarks, res.segmentation_mask
         # --- (수정 끝) ---
+    
+    def get_smoothed_landmarks(self):
+        """현재 스무딩된 모든 랜드마크를 반환합니다 (Phase 1)."""
+        return self.smoothed_landmark_pos.copy()
+    
+    def get_fist_centroids(self):
+        """주먹 중심점을 계산하여 반환합니다 (Phase 1).
+        
+        Returns:
+            (left_fist_center, right_fist_center): 
+            - left_fist_center: (x, y) 또는 None
+            - right_fist_center: (x, y) 또는 None
+        """
+        return (self.left_fist_center, self.right_fist_center)
+    
+    def update_landmark_smoothing(self, pose_landmarks):
+        """랜드마크 스무딩을 업데이트합니다 (Phase 1)."""
+        if not pose_landmarks:
+            return
+        
+        lm = pose_landmarks.landmark
+        def P(i): return (lm[i].x * self.width, lm[i].y * self.height)
+        
+        try:
+            # 랜드마크 좌표 추출
+            raw_landmark_pos = {
+                "head_center": None, "nose": None, "left_eye_inner": None, "right_eye_inner": None,
+                "left_wrist": None, "right_wrist": None, 
+                "left_elbow": None, "right_elbow": None,
+                "shoulders": (None, None),
+                "left_ear": None, "right_ear": None,
+                "left_mouth": None, "right_mouth": None,
+                "left_index": None, "right_index": None,
+                "left_pinky": None, "right_pinky": None,
+                "left_thumb": None, "right_thumb": None
+            }
+            
+            NOSE = P(mp_pose.PoseLandmark.NOSE)
+            L_EYE_INNER = P(mp_pose.PoseLandmark.LEFT_EYE_INNER)
+            R_EYE_INNER = P(mp_pose.PoseLandmark.RIGHT_EYE_INNER)
+            HEAD_CENTER = ((L_EYE_INNER[0] + R_EYE_INNER[0]) / 2, (L_EYE_INNER[1] + R_EYE_INNER[1]) / 2)
+            
+            L_WRIST = P(mp_pose.PoseLandmark.LEFT_WRIST)
+            R_WRIST = P(mp_pose.PoseLandmark.RIGHT_WRIST)
+            L_ELBOW = P(mp_pose.PoseLandmark.LEFT_ELBOW)
+            R_ELBOW = P(mp_pose.PoseLandmark.RIGHT_ELBOW)
+            L_SHOULDER = P(mp_pose.PoseLandmark.LEFT_SHOULDER)
+            R_SHOULDER = P(mp_pose.PoseLandmark.RIGHT_SHOULDER)
+            LEFT_EAR = P(mp_pose.PoseLandmark.LEFT_EAR)
+            RIGHT_EAR = P(mp_pose.PoseLandmark.RIGHT_EAR)
+            LEFT_MOUTH = P(mp_pose.PoseLandmark.MOUTH_LEFT)
+            RIGHT_MOUTH = P(mp_pose.PoseLandmark.MOUTH_RIGHT)
+            L_PINKY = P(mp_pose.PoseLandmark.LEFT_PINKY)
+            R_PINKY = P(mp_pose.PoseLandmark.RIGHT_PINKY)
+            L_INDEX = P(mp_pose.PoseLandmark.LEFT_INDEX)
+            R_INDEX = P(mp_pose.PoseLandmark.RIGHT_INDEX)
+            L_THUMB = P(mp_pose.PoseLandmark.LEFT_THUMB)
+            R_THUMB = P(mp_pose.PoseLandmark.RIGHT_THUMB)
+            
+            raw_landmark_pos = {
+                "head_center": HEAD_CENTER, "nose": NOSE,
+                "left_eye_inner": L_EYE_INNER, "right_eye_inner": R_EYE_INNER,
+                "left_wrist": L_WRIST, "right_wrist": R_WRIST,
+                "left_elbow": L_ELBOW, "right_elbow": R_ELBOW,
+                "shoulders": (L_SHOULDER, R_SHOULDER),
+                "left_ear": LEFT_EAR, "right_ear": RIGHT_EAR,
+                "left_mouth": LEFT_MOUTH, "right_mouth": RIGHT_MOUTH,
+                "left_index": L_INDEX, "right_index": R_INDEX,
+                "left_pinky": L_PINKY, "right_pinky": R_PINKY,
+                "left_thumb": L_THUMB, "right_thumb": R_THUMB
+            }
+        except Exception:
+            return
+        
+        # 스무딩 적용
+        for key in self.smoothed_landmark_pos.keys():
+            raw_pos = raw_landmark_pos.get(key)
+            prev_pos = self.smoothed_landmark_pos.get(key)
+            
+            if key == "shoulders":
+                raw_l, raw_r = raw_pos if raw_pos and None not in raw_pos else (None, None)
+                prev_l, prev_r = prev_pos if prev_pos and None not in prev_pos else (None, None)
+                
+                def smooth_point(raw, prev):
+                    if raw:
+                        if prev:
+                            x = prev[0] * (1.0 - self.smoothing_alpha) + raw[0] * self.smoothing_alpha
+                            y = prev[1] * (1.0 - self.smoothing_alpha) + raw[1] * self.smoothing_alpha
+                            return (x, y)
+                        return raw
+                    return None
+                    
+                self.smoothed_landmark_pos[key] = (smooth_point(raw_l, prev_l), smooth_point(raw_r, prev_r))
+                continue
+            
+            if raw_pos:
+                if prev_pos:
+                    new_x = prev_pos[0] * (1.0 - self.smoothing_alpha) + raw_pos[0] * self.smoothing_alpha
+                    new_y = prev_pos[1] * (1.0 - self.smoothing_alpha) + raw_pos[1] * self.smoothing_alpha
+                    self.smoothed_landmark_pos[key] = (new_x, new_y)
+                else:
+                    self.smoothed_landmark_pos[key] = raw_pos
+            else:
+                self.smoothed_landmark_pos[key] = None
+    
+    def calculate_fist_centroids(self):
+        """주먹 중심점을 계산합니다 (Phase 1)."""
+        mode = int(self.config_rules.get("spatial_judge_mode", 2))
+        if mode == 1:
+            left_keys = ["left_wrist"]
+            right_keys = ["right_wrist"]
+        else:
+            left_keys = ["left_wrist", "left_pinky", "left_index", "left_thumb"]
+            right_keys = ["right_wrist", "right_pinky", "right_index", "right_thumb"]
+        
+        def calc_centroid(keys):
+            pts = [self.smoothed_landmark_pos.get(k) for k in keys]
+            valid_points = [p for p in pts if p is not None]
+            if not valid_points:
+                return None
+            xs = [p[0] for p in valid_points]
+            ys = [p[1] for p in valid_points]
+            return (int(np.mean(xs)), int(np.mean(ys)))
+        
+        self.left_fist_center = calc_centroid(left_keys)
+        self.right_fist_center = calc_centroid(right_keys)
+    
+    def check_calibration_position(self, calib_targets):
+        """캘리브레이션 위치 확인 (Phase 4).
+        
+        Args:
+            calib_targets: 캘리브레이션 타겟 정보 (head, left_fist, right_fist)
+        
+        Returns:
+            (all_ok, (head_ok, left_fist_ok, right_fist_ok), raw_landmark_pos): 
+            - all_ok: 모든 타겟 달성 여부
+            - (head_ok, left_fist_ok, right_fist_ok): 각 타겟 달성 여부
+            - raw_landmark_pos: 원본 랜드마크 위치 딕셔너리
+        """
+        import mediapipe as mp
+        mp_pose = mp.solutions.pose
+        
+        positions = {
+            "head_center": None, "nose": None, "left_eye_inner": None, "right_eye_inner": None,
+            "left_wrist": None, "right_wrist": None, 
+            "left_elbow": None, "right_elbow": None,
+            "shoulders": (None, None),
+            "left_ear": None, "right_ear": None,
+            "left_mouth": None, "right_mouth": None,
+            "left_index": None, "right_index": None,
+            "left_pinky": None, "right_pinky": None,
+            "left_thumb": None, "right_thumb": None
+        }
+        
+        if not hasattr(self, 'smoothed_landmark_pos') or not self.smoothed_landmark_pos:
+            return False, (False, False, False), positions
+        
+        # 스무딩된 랜드마크를 사용하여 캘리브레이션 확인
+        smoothed = self.smoothed_landmark_pos
+        
+        def dist(p1, p2):
+            return np.linalg.norm(np.array(p1) - np.array(p2))
+        
+        target_h = calib_targets["head"]
+        target_l = calib_targets["left_fist"]
+        target_r = calib_targets["right_fist"]
+        
+        # 머리 확인
+        nose_pos = smoothed.get("nose")
+        head_ok = False
+        if nose_pos:
+            head_ok = dist(nose_pos, target_h["pos"]) < target_h["radius"]
+        
+        # 손의 중앙점을 사용하여 캘리브레이션 확인
+        mode = int(self.config_rules.get("spatial_judge_mode", 2))
+        if mode == 1:
+            left_keys = ["left_wrist"]
+            right_keys = ["right_wrist"]
+        else:
+            left_keys = ["left_wrist", "left_pinky", "left_index", "left_thumb"]
+            right_keys = ["right_wrist", "right_pinky", "right_index", "right_thumb"]
+        
+        def calc_centroid(keys):
+            pts = [smoothed.get(k) for k in keys]
+            valid_points = [p for p in pts if p is not None]
+            if not valid_points:
+                return None
+            xs = [p[0] for p in valid_points]
+            ys = [p[1] for p in valid_points]
+            return (np.mean(xs), np.mean(ys))
+        
+        left_fist_center = calc_centroid(left_keys)
+        right_fist_center = calc_centroid(right_keys)
+        
+        # cv2.flip 고려: 화면 왼쪽 = 실제 오른손, 화면 오른쪽 = 실제 왼손
+        lw_ok = False
+        rw_ok = False
+        
+        if right_fist_center:  # 화면 왼쪽 펀치 타겟 -> 실제 오른손 사용
+            lw_ok = dist(right_fist_center, target_l["pos"]) < target_l["radius"]
+        
+        if left_fist_center:  # 화면 오른쪽 펀치 타겟 -> 실제 왼손 사용
+            rw_ok = dist(left_fist_center, target_r["pos"]) < target_r["radius"]
+        
+        all_ok = head_ok and lw_ok and rw_ok
+        
+        # raw_landmark_pos는 smoothed_landmark_pos를 사용 (실제로는 스무딩된 값)
+        raw_landmark_pos = smoothed.copy()
+        
+        return all_ok, (head_ok, lw_ok, rw_ok), raw_landmark_pos
