@@ -8,12 +8,11 @@ from collections import deque
 
 # MediaPipe 포즈 솔루션 초기화
 mp_pose = mp.solutions.pose
-mp_drawing = mp.solutions.drawing_utils
 
 class PoseTracker:
     def __init__(self, width, height, config_rules, config_ui):
         self.pose = mp_pose.Pose(
-            model_complexity=1,
+            model_complexity=2,  # 정확도 개선을 위해 1 -> 2로 변경
             min_detection_confidence=0.5,
             min_tracking_confidence=0.5,
             enable_segmentation=True # --- (수정) 배경 분리 기능 활성화 ---
@@ -139,12 +138,6 @@ class PoseTracker:
             # --- (수정) 마스크 함께 반환 ---
             return hit_events, res.pose_landmarks, res.segmentation_mask
             # --- (수정 끝) ---
-
-        mp_drawing.draw_landmarks(
-            frame, res.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-            mp_drawing.DrawingSpec(color=(245,117,66), thickness=2, circle_radius=2),
-            mp_drawing.DrawingSpec(color=(245,66,230), thickness=2, circle_radius=2)
-        )
 
         self.hist_t.append(now)
         for h, v in [(self.hist_lw, LW), (self.hist_rw, RW), (self.hist_ls, LS), (self.hist_rs, RS), (self.hist_le, LE), (self.hist_re, RE)]:

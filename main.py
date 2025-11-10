@@ -108,9 +108,6 @@ def main():
     print("  SPACE (결과) : 게임 재시작")
     print("---------------")
     
-    # (추가) 블러 처리를 위한 배경 이미지 (초기화)
-    blurred_bg = np.zeros((CAM_HEIGHT, CAM_WIDTH, 3), dtype=np.uint8)
-
     # 7. 메인 게임 루프 (씬 매니저)
     try:
         while True:
@@ -127,26 +124,16 @@ def main():
                 break
             frame = cv2.flip(frame, 1) # 좌우 반전
             
-            # --- (추가) 3. Pose-Tracking 및 배경 블러 (main에서) ---
+            # --- (수정) 3. Pose-Tracking 및 배경 합성 (main에서) ---
             now = time.time()
             
             # (수정) 원본 프레임(frame)을 복사하여 포즈 트래커에 전달 (랜드마크가 원본에 그려지는 것을 방지)
             frame_for_pose = frame.copy()
-            hit_events, landmarks, mask = pose_tracker.process_frame(frame_for_pose, now)
-            
-            if mask is not None:
-                # 배경 블러 생성
-                blurred_bg = cv2.GaussianBlur(frame, (21, 21), 0)
-                
-                # 마스크를 3채널로 확장 (B, G, R)
-                mask_3ch = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-                
-                # 마스크(사람) 부분은 원본(frame)을, 아닌 부분은 블러(blurred_bg)를 합성
-                display_frame = np.where(mask_3ch > 0.1, frame, blurred_bg)
-            else:
-                # 마스크가 없으면 (아직 로딩 중이거나 감지 실패 시) 원본 프레임 표시
-                display_frame = frame
-            # --- (추가 끝) ---
+            hit_events, landmarks, _ = pose_tracker.process_frame(frame_for_pose, now)
+
+            # 카메라 영상 대신 비어 있는 캔버스를 사용하여 UI와 포즈 포인트만 표시
+            display_frame = np.zeros((CAM_HEIGHT, CAM_WIDTH, 3), dtype=np.uint8)
+            # --- (수정 끝) ---
 
             # (수정) 4. 현재 씬 로직 업데이트
             # (원본 frame과 랜드마크 정보를 전달)

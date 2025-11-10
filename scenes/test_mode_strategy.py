@@ -100,20 +100,25 @@ class TestModeStrategy(GameModeStrategy):
         # Phase 1: 스무딩된 랜드마크는 PoseTracker에서 가져옴
         smoothed_landmarks = self.game_scene.pose_tracker.get_smoothed_landmarks()
         left_fist, right_fist = self.game_scene.pose_tracker.get_fist_centroids()
+
+        note_colors = self.game_scene.config_ui.get("colors", {}).get("notes", {})
+        color_jab_l = tuple(note_colors.get("JAB_L", [255, 128, 0]))  # 실제 오른손
+        color_jab_r = tuple(note_colors.get("JAB_R", [0, 128, 255]))  # 실제 왼손
+        nose_color = (0, 255, 255)
         
         nose_pos = smoothed_landmarks.get("nose")
         if nose_pos:
             nx, ny = int(nose_pos[0]), int(nose_pos[1])
-            cv2.circle(frame, (nx, ny), 8, (0, 255, 255), -1)  # 노란색 원
+            cv2.circle(frame, (nx, ny), 8, nose_color, -1)  # 노란색 원
         
         # 랜드마크 시각화 (코, 손 중앙점만 표시, 연결선 제외)
         if left_fist:
             lx, ly = left_fist
-            cv2.circle(frame, (lx, ly), 10, (0, 0, 255), 2)  # 빨간색 원 (연결선 없음)
+            cv2.circle(frame, (lx, ly), 10, color_jab_r, -1)
         
         if right_fist:
             rx, ry = right_fist
-            cv2.circle(frame, (rx, ry), 10, (0, 0, 255), 2)  # 빨간색 원 (연결선 없음)
+            cv2.circle(frame, (rx, ry), 10, color_jab_l, -1)
     
     def draw_additional(self, frame, now):
         """테스트 모드: 이벤트 히스토리 표시 및 Test mode 텍스트"""

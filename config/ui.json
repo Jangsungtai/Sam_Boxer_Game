@@ -18,7 +18,11 @@
     },
     "hud": {
       "duck_line": [0, 255, 0],
-      "hit_zone": [0, 0, 255],
+      "hit_zone": [255, 255, 255],
+      "hit_zone_perfect_color": [0, 255, 255],
+      "hit_zone_great_color": [255, 165, 0],
+      "hit_zone_good_color": [0, 128, 0],
+      "hit_zone_miss_color": [0, 0, 255],
       "score_text": [255, 255, 255],
       "combo_text": [255, 255, 255]
     }
@@ -51,7 +55,8 @@
   "styles": {
     "hud": {
       "hit_zone_radius": 100,
-      "hit_zone_thickness": 6
+      "hit_zone_thickness": 6,
+      "hit_zone_effect_duration": 0.15
     },
     "notes": {
       "circle_radius": 55,
@@ -71,7 +76,11 @@
     "colors.judgement": "판정 텍스트 색상",
     "colors.hud": "HUD 요소 색상",
     "colors.hud.duck_line": "숙이기 기준선 색상",
-    "colors.hud.hit_zone": "히트 존(원) 색상",
+    "colors.hud.hit_zone": "히트 존(원) 기본 색상",
+    "colors.hud.hit_zone_perfect_color": "PERFECT 판정 시 히트존 색상 (BGR)",
+    "colors.hud.hit_zone_great_color": "GREAT 판정 시 히트존 색상 (BGR)",
+    "colors.hud.hit_zone_good_color": "GOOD 판정 시 히트존 색상 (BGR)",
+    "colors.hud.hit_zone_miss_color": "MISS 판정 시 히트존 색상 (BGR)",
     "colors.hud.score_text": "스코어 텍스트 색상",
     "colors.hud.combo_text": "콤보 텍스트 색상",
     "positions": "화면 내 요소들의 상대 위치/비율 설정",
@@ -84,6 +93,7 @@
     "styles": "스타일(크기/두께 등) 설정",
     "styles.hud.hit_zone_radius": "히트 존 원의 반지름(px)",
     "styles.hud.hit_zone_thickness": "히트 존 원의 선 두께(px). 채우기는 -1",
+    "styles.hud.hit_zone_effect_duration": "판정 이펙트 지속 시간(초)",
     "styles.notes": "노트 도형/텍스트 크기와 두께",
     "styles.notes.circle_radius": "원형 노트 반지름(px)",
     "styles.notes.circle_outline_thickness": "원형 노트 외곽선 두께(px)",

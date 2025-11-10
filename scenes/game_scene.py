@@ -162,6 +162,9 @@ class GameScene(BaseScene):
         self.judgement_stats = {"PERFECT": 0, "GREAT": 0, "GOOD": 0, "MISS": 0}
         # 최근 판정 결과 저장 (히트존 색상 변경용)
         self.last_judgement = None
+        # 이펙트 타이머 및 판정 타입 (Arcade 컨셉 시각화용)
+        self.hit_effect_timer = 0.0
+        self.last_judgement_type = None
         # 디버그 정보 초기화
         self.debug_remaining_time = None
         self.debug_spatial_distance = None
@@ -277,6 +280,31 @@ class GameScene(BaseScene):
             pass 
 
     # Phase 4: _check_calib_position 메서드는 PoseTracker.check_calibration_position으로 이동됨
+
+    def _update_arc_colors(self, bgr_color):
+        """OpenCV BGR 색상을 Arcade RGB 튜플로 변환합니다.
+        
+        Args:
+            bgr_color: BGR 순서의 색상 리스트 또는 튜플 (예: [255, 0, 0] = 빨간색 BGR)
+        
+        Returns:
+            RGB 튜플 (예: (0, 0, 255) = 빨간색 RGB)
+        """
+        if isinstance(bgr_color, (list, tuple)) and len(bgr_color) >= 3:
+            # BGR -> RGB 변환
+            return (bgr_color[2], bgr_color[1], bgr_color[0])
+        return bgr_color  # 투명도(Alpha)가 있거나 형식이 다른 경우 그대로 반환
+    
+    def _bgr_to_rgb(self, bgr_color):
+        """BGR 색상을 RGB로 변환 (Arcade용 헬퍼 메서드)."""
+        return self._update_arc_colors(bgr_color)
+    
+    def _rgb_to_bgr(self, rgb_color):
+        """RGB 색상을 BGR로 변환 (OpenCV용 헬퍼 메서드)."""
+        if isinstance(rgb_color, (list, tuple)) and len(rgb_color) >= 3:
+            # RGB -> BGR 변환
+            return (rgb_color[2], rgb_color[1], rgb_color[0])
+        return rgb_color
 
     def _hand_inside_hit_zone(self, ev_type):
         """이벤트 타입(JAB_L/JAB_R)에 해당하는 손 랜드마크가 히트존 원 내부인지 확인합니다 (Phase 1)."""
@@ -399,7 +427,9 @@ class GameScene(BaseScene):
         # (수정) floating_judgement_logs에 저장 (pos는 _draw_hud에서 계산)
         # "timing" 판정은 로그에 표시하지 않음
         if judge_text != "timing":
-            color = tuple(self.config_ui["colors"]["judgement"].get(judge_text, [255, 255, 255]))
+            # (수정) BGR을 RGB로 변환하여 저장 (Arcade 준비)
+            raw_bgr_color = self.config_ui["colors"]["judgement"].get(judge_text, [255, 255, 255])
+            color = self._update_arc_colors(raw_bgr_color)  # RGB 튜플로 변환
             # pos는 _draw_hud에서 계산하므로 여기서는 None으로 저장
             display_pos = None
             self.floating_judgement_logs.appendleft((display_text, color, display_pos))
@@ -415,6 +445,10 @@ class GameScene(BaseScene):
             self.last_judgement = judge_text
         elif judge_text in ["timing", "area", "area/timing"]:
             self.last_judgement = "MISS"
+        
+        # 이펙트 타이머 설정 (Arcade 컨셉 시각화용)
+        self.hit_effect_timer = time.time()
+        self.last_judgement_type = judge_text
         
         # 테스트 모드: assets 사운드 무시 (비프음은 BPM에 맞춰 자동 재생)
         # 일반 모드: assets 사운드 무시 (비프음만 재생)
@@ -628,6 +662,10 @@ class GameScene(BaseScene):
     def draw(self, frame):
         """현재 씬 상태에 맞는 UI와 노트를 화면에 렌더링합니다."""
         now = time.time()
+        note_colors = self.config_ui.get("colors", {}).get("notes", {})
+        color_jab_l = tuple(note_colors.get("JAB_L", [255, 128, 0]))  # 화면 왼쪽 노트 색상 (실제 오른손)
+        color_jab_r = tuple(note_colors.get("JAB_R", [0, 128, 255]))  # 화면 오른쪽 노트 색상 (실제 왼손)
+        nose_color = (0, 255, 255)
         
         # 1. 장비 그리기 비활성화 (헤드기어 오버레이 일시 중지)
         # self._draw_equipment(frame)
@@ -654,16 +692,16 @@ class GameScene(BaseScene):
             
             if nose_pos:
                 nx, ny = int(nose_pos[0]), int(nose_pos[1])
-                cv2.circle(frame, (nx, ny), 8, (0, 255, 255), -1)  # 노란색 원
+                cv2.circle(frame, (nx, ny), 8, nose_color, -1)  # 노란색 원
             
             # 손의 중앙점 표시 (spatial_judge_mode에 따라 계산된 중앙점 사용)
             if left_fist:
                 lx, ly = left_fist
-                cv2.circle(frame, (lx, ly), 8, (0, 255, 255), -1)  # 노란색 원
+                cv2.circle(frame, (lx, ly), 10, color_jab_r, -1)
             
             if right_fist:
                 rx, ry = right_fist
-                cv2.circle(frame, (rx, ry), 8, (0, 255, 255), -1)  # 노란색 원
+                cv2.circle(frame, (rx, ry), 10, color_jab_l, -1)
 
             text_pos = (self.width // 2 - 350, self.height // 2)
             if self.calib_hold_start_time > 0:
@@ -688,7 +726,7 @@ class GameScene(BaseScene):
             for note in self.active_notes:
                 note.update_and_draw(frame, now, self.state["start_time"], self.hit_zone)
             # --- (수정 끝) ---
-            
+                
             # 노트 제거 로직:
             # 1. hit된 노트는 바로 제거
             # 2. missed된 노트는 다음 노트가 히트존에 도달할 때까지 유지

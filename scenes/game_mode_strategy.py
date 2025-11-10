@@ -1,6 +1,7 @@
 # scenes/game_mode_strategy.py
 
 import cv2
+import time
 from abc import ABC, abstractmethod
 
 class GameModeStrategy(ABC):
@@ -44,31 +45,68 @@ class GameModeStrategy(ABC):
         
         hz_x, hz_y = self.game_scene.hit_zone
         
-        # 판정 결과에 따라 히트존 색상 및 두께 변경
-        last_judgement = self.game_scene.last_judgement
-        base_thickness = hit_zone_thickness
+        # --- 판정 이펙트 로직 시작 (Arcade 컨셉 시각화) ---
+        now = time.time()
+        effect_duration = hud_styles.get("hit_zone_effect_duration", 0.15)
         
-        if last_judgement == "PERFECT":
-            hit_zone_color = (0, 255, 255)  # 노란색 (BGR)
-            hit_zone_thickness = base_thickness * 2
-        elif last_judgement == "GREAT":
-            hit_zone_color = (0, 255, 0)  # 녹색 (BGR)
-        elif last_judgement == "GOOD":
-            hit_zone_color = (255, 0, 0)  # 파란색 (BGR)
-        elif last_judgement == "MISS":
-            hit_zone_color = (0, 0, 255)  # 빨간색 (BGR)
+        last_type = self.game_scene.last_judgement_type
+        # hit_effect_timer가 0.0이면 아직 판정이 없었던 것이므로 이펙트 비활성화
+        if self.game_scene.hit_effect_timer > 0:
+            elapsed = now - self.game_scene.hit_effect_timer
         else:
-            hit_zone_color = (128, 128, 128)  # 회색 (BGR) - 평상시
+            elapsed = effect_duration + 1  # 이펙트 비활성화를 위한 큰 값
         
-        cv2.circle(frame, (hz_x, hz_y), hit_zone_radius, hit_zone_color, hit_zone_thickness)
+        # 기본값 설정: BGR 색상을 유지
+        hit_zone_color_bgr = tuple(col_cfg.get("hit_zone", [255, 255, 255]))
+        current_radius = hit_zone_radius
+        
+        # 이펙트 시간 내에 있으면
+        if elapsed < effect_duration and last_type and self.game_scene.hit_effect_timer > 0:
+            col_cfg_hud = self.game_scene.config_ui["colors"]["hud"]
+            
+            color_map_bgr = {
+                "PERFECT": tuple(col_cfg_hud.get("hit_zone_perfect_color", [0, 255, 255])),
+                "GREAT": tuple(col_cfg_hud.get("hit_zone_great_color", [255, 165, 0])),
+                "GOOD": tuple(col_cfg_hud.get("hit_zone_good_color", [0, 128, 0])),
+                "MISS": tuple(col_cfg_hud.get("hit_zone_miss_color", [0, 0, 255])),
+                "timing": tuple(col_cfg_hud.get("hit_zone_miss_color", [0, 0, 255])),
+                "area": tuple(col_cfg_hud.get("hit_zone_miss_color", [0, 0, 255])),
+                "area/timing": tuple(col_cfg_hud.get("hit_zone_miss_color", [0, 0, 255])),
+                "BOMB!": (128, 0, 255)  # BGR 보라색
+            }
+            
+            # 색상 적용 (BGR 순서)
+            hit_zone_color_bgr = color_map_bgr.get(last_type, hit_zone_color_bgr)
+            
+            # Perfect일 때만 순간적으로 확장 (타격감 구현)
+            if last_type == "PERFECT":
+                max_expansion = hit_zone_radius * 0.15
+                half_duration = effect_duration / 2
+                
+                if elapsed < half_duration:
+                    # 확장 페이즈: 0 -> max
+                    expansion_ratio = elapsed / half_duration
+                    current_radius += max_expansion * expansion_ratio
+                else:
+                    # 축소 페이즈: max -> 0
+                    shrink_ratio = (elapsed - half_duration) / half_duration
+                    current_radius += max_expansion * (1.0 - shrink_ratio)
+            
+            current_radius = int(current_radius)
+        
+        # cv2.circle 호출 시 동적으로 계산된 값 사용
+        cv2.circle(frame, (hz_x, hz_y), current_radius, hit_zone_color_bgr, hit_zone_thickness)
+        # --- 판정 이펙트 로직 끝 ---
         
         # 히트존 원 위에 최근 판정 결과 하나만 표시
         if self.game_scene.floating_judgement_logs:
-            text, color, _ = self.game_scene.floating_judgement_logs[0]
+            text, color_rgb, _ = self.game_scene.floating_judgement_logs[0]
+            # color는 RGB 튜플이므로 OpenCV에 그릴 때는 BGR로 변환
+            bgr_color = self.game_scene._rgb_to_bgr(color_rgb) if hasattr(self.game_scene, '_rgb_to_bgr') else (color_rgb[2], color_rgb[1], color_rgb[0])
             text_size = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 1.0, 2)[0]
             text_x = hz_x - (text_size[0] // 2)
             text_y = hz_y - (hit_zone_radius + 40)
-            cv2.putText(frame, text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, color, 2)
+            cv2.putText(frame, text, (text_x, text_y), cv2.FONT_HERSHEY_SIMPLEX, 1.0, bgr_color, 2)
         
         # Score, Combo 표시
         score_pos = tuple(pos_cfg["score"])
