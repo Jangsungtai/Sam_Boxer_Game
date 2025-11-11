@@ -40,7 +40,7 @@ class PoseTracker:
         self.V_THRESH = rules["action_v_thresh"]
         self.ANG_THRESH = rules["action_ang_thresh"]
         
-        self.test_mode = config_rules.get("test_mode", False)
+        self.test_mode = False
         self.last_hit_t = {"L": 0.0, "R": 0.0}
         
         # config_rules 저장 (spatial_judge_mode 접근용)
@@ -255,6 +255,10 @@ class PoseTracker:
 
         # --- (수정) 마스크 함께 반환 ---
         return hit_events, res.pose_landmarks, res.segmentation_mask
+
+    def set_test_mode(self, enabled: bool) -> None:
+        """테스트 모드 토글 (실시간 디버그 용)."""
+        self.test_mode = bool(enabled)
         # --- (수정 끝) ---
     
     def get_smoothed_landmarks(self):

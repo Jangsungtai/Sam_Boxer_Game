@@ -1,74 +1,69 @@
-# scenes/result_scene.py
+from __future__ import annotations
 
-import cv2
-import pygame
 import time
+
+import arcade
+
 from scenes.base_scene import BaseScene
 
-class ResultScene(BaseScene):
-    # --- (수정) __init__ 시그니처 변경 ---
-    def __init__(self, screen, audio_manager, config, pose_tracker):
-        super().__init__(screen, audio_manager, config, pose_tracker)
-        # --- (수정 끝) ---
-        
-        self.width = int(self.screen.get(cv2.CAP_PROP_FRAME_WIDTH))
-        self.height = int(self.screen.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        
-        self.title_pos = (int(self.width // 2 - 200), int(self.height // 2 - 100))
-        self.score_pos = (int(self.width // 2 - 250), int(self.height // 2))
-        self.menu_pos = (int(self.width // 2 - 300), int(self.height // 2 + 100))
-        self.restart_pos = (int(self.width // 2 - 300), int(self.height // 2 + 150))
-        
-        self.font = cv2.FONT_HERSHEY_SIMPLEX
-        self.final_score = 0
 
-        self.key_press_time_m = 0
-        self.key_press_time_space = 0
-        self.default_color = (200, 200, 200)
-        self.press_color = (0, 255, 255)
-        self.menu_text_color = self.default_color
-        self.restart_text_color = self.default_color
+class ResultScene(BaseScene):
+    def __init__(self, window, audio_manager, config, pose_tracker) -> None:
+        super().__init__(window, audio_manager, config, pose_tracker)
+        self.final_score: int = 0
+        self.restart_color = arcade.color.LIGHT_GRAY
+        self.restart_pressed_color = arcade.color.YELLOW
+        self.restart_flash_time: float = 0.0
 
     def startup(self, persistent_data):
-        """GameScene에서 최종 점수를 받습니다."""
         super().startup(persistent_data)
         self.final_score = persistent_data.get("final_score", 0)
-        print(f"ResultScene: 최종 점수 {self.final_score}를 받았습니다.")
-        
-        self.menu_text_color = self.default_color
-        self.restart_text_color = self.default_color
-        self.key_press_time_m = 0
-        self.key_press_time_space = 0
+        print(f"ResultScene: received final score {self.final_score}.")
+        self.restart_color = arcade.color.LIGHT_GRAY
+        self.restart_flash_time = 0.0
 
-    def handle_event(self, key):
-        if key == ord(' ') or key == 32:
-            print("ResultScene: 'Space' 키 입력. GameScene(재시작)으로 전환합니다.")
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
+        if symbol == arcade.key.SPACE:
+            print("ResultScene: SPACE pressed. Restarting game.")
             self.next_scene_name = "GAME"
-            self.key_press_time_space = time.time()
-            self.restart_text_color = self.press_color
+            self.restart_color = self.restart_pressed_color
+            self.restart_flash_time = time.time()
 
-    # --- (수정) update 시그니처 변경 ---
-    def update(self, frame, hit_events, landmarks, now):
-        # --- (수정 끝) ---
-        
-        # M키 깜빡임 로직
-        if self.key_press_time_m > 0 and (now - self.key_press_time_m) > 0.2:
-            self.menu_text_color = self.default_color
-            self.key_press_time_m = 0
-            
-        # 스페이스바 깜빡임 로직
-        if self.key_press_time_space > 0 and (now - self.key_press_time_space) > 0.2:
-            self.restart_text_color = self.default_color
-            self.key_press_time_space = 0
+    def update(self, delta_time: float, **kwargs):
+        super().update(delta_time, **kwargs)
+        now = kwargs.get("now", time.time())
+        if self.restart_flash_time and (now - self.restart_flash_time) > 0.25:
+            self.restart_color = arcade.color.LIGHT_GRAY
+            self.restart_flash_time = 0.0
 
-    def draw(self, frame):
-        # (frame은 main.py에서 블러 처리된 프레임이 넘어옴)
-        
-        cv2.putText(frame, "GAME OVER", 
-                    self.title_pos, self.font, 2.5, (0, 0, 255), 5)
-        
-        cv2.putText(frame, f"Final Score: {self.final_score}", 
-                    self.score_pos, self.font, 2.0, (255, 255, 255), 3)
-        
-        cv2.putText(frame, "Press 'Space' to Restart", 
-                    self.restart_pos, self.font, 1.5, self.restart_text_color, 2)
+    def draw_scene(self) -> None:
+        width = max(1, int(self.window.width))
+        height = max(1, int(self.window.height))
+
+        arcade.draw_text(
+            "GAME OVER",
+            width / 2,
+            height / 2 + 80,
+            arcade.color.RED,
+            font_size=42,
+            anchor_x="center",
+            anchor_y="center",
+        )
+        arcade.draw_text(
+            f"Final Score: {self.final_score}",
+            width / 2,
+            height / 2,
+            arcade.color.WHITE,
+            font_size=28,
+            anchor_x="center",
+            anchor_y="center",
+        )
+        arcade.draw_text(
+            "Press SPACE to Restart",
+            width / 2,
+            height / 2 - 80,
+            self.restart_color,
+            font_size=20,
+            anchor_x="center",
+            anchor_y="center",
+        )

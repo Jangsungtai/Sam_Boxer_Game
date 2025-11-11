@@ -1,5 +1,4 @@
 {
-  "test_mode": true,
   "spatial_judge_mode": 2,
   "timing_offset": -0.15,
   "//": "시스템 지연 보상값 (초). 음수 = 판정을 더 일찍 (예: -0.15초)",

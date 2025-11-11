@@ -1,50 +1,98 @@
-# scenes/base_scene.py
+from __future__ import annotations
 
-class BaseScene:
-    """
-    모든 씬의 부모가 되는 기본 클래스.
-    이 클래스를 상속받는 모든 씬은
-    handle_event, update, draw 메서드를 구현해야 합니다.
-    """
-    # --- (수정) pose_tracker를 받도록 __init__ 변경 ---
-    def __init__(self, screen, audio_manager, config, pose_tracker):
-        self.screen = screen # OpenCV 프레임 (영상)
+from typing import Any, Dict, Optional, Tuple
+
+import arcade
+
+
+class BaseScene(arcade.View):
+    """Arcade View 기반의 공통 Scene 베이스 클래스."""
+
+    def __init__(self, window: arcade.Window, audio_manager, config: Dict[str, Any], pose_tracker) -> None:
+        super().__init__(window)
+        self.window: arcade.Window = window
         self.audio_manager = audio_manager
-        self.config = config # config 딕셔너리
-        self.pose_tracker = pose_tracker # (추가)
-        self.next_scene_name = None # 다음 씬으로 전환할 때 사용
-        self.persistent_data = {} # 씬 간에 전달할 데이터 (예: 최종 점수)
-    # --- (수정 끝) ---
+        self.config = config
+        self.pose_tracker = pose_tracker
 
-    def handle_event(self, key):
-        """키보드 입력을 처리합니다 (OpenCV key code)."""
-        pass
+        self.next_scene_name: Optional[str] = None
+        self.persistent_data: Dict[str, Any] = {}
+        self.source_width: int = 0
+        self.source_height: int = 0
+        self.latest_inputs: Dict[str, Any] = {}
+        self.x_scale: float = 1.0
+        self.y_scale: float = 1.0
 
-    # --- (수정) update 시그니처 변경 ---
-    def update(self, frame, hit_events, landmarks, now):
-        """
-        매 프레임 게임 로직을 업데이트합니다.
-        frame: 원본 카메라 프레임
-        hit_events: main.py의 pose_tracker가 감지한 이벤트
-        landmarks: main.py의 pose_tracker가 감지한 랜드마크
-        now: 현재 시간
-        """
-        pass
-    # --- (수정 끝) ---
+    # ------------------------------------------------------------------ #
+    # Lifecycle helpers
+    # ------------------------------------------------------------------ #
+    def startup(self, persistent_data: Optional[Dict[str, Any]]) -> None:
+        self.persistent_data = persistent_data or {}
+        self.next_scene_name = None
 
-    def draw(self, frame):
-        """
-        화면에 UI를 그립니다.
-        frame: main.py에서 '블러 처리된' 프레임
-        """
-        pass
-
-    def startup(self, persistent_data):
-        """씬이 시작될 때 이전 씬에서 데이터를 받습니다."""
-        self.persistent_data = persistent_data
-        self.next_scene_name = None 
-
-    def cleanup(self):
-        """씬이 종료될 때 데이터를 반환합니다."""
+    def cleanup(self) -> Dict[str, Any]:
         self.next_scene_name = None
         return self.persistent_data
+
+    def set_source_dimensions(self, width: int, height: int) -> None:
+        self.source_width = max(0, int(width))
+        self.source_height = max(0, int(height))
+        self._update_scale()
+
+    def _update_scale(self) -> None:
+        window_width = getattr(self.window, "width", 0) or 0
+        window_height = getattr(self.window, "height", 0) or 0
+        if self.source_width > 0 and window_width:
+            self.x_scale = window_width / self.source_width
+        else:
+            self.x_scale = 1.0
+        if self.source_height > 0 and window_height:
+            self.y_scale = window_height / self.source_height
+        else:
+            self.y_scale = 1.0
+
+    # ------------------------------------------------------------------ #
+    # Arcade hooks
+    # ------------------------------------------------------------------ #
+    def on_show(self) -> None:
+        arcade.set_background_color(arcade.color.BLACK)
+
+    def update(self, delta_time: float, **kwargs: Any) -> None:  # pragma: no cover - override as needed
+        self.latest_inputs = kwargs
+
+    def on_draw(self) -> None:  # pragma: no cover - override as needed
+        self.window.clear()
+        self.draw_scene()
+
+    def on_resize(self, width: int, height: int) -> None:
+        super().on_resize(width, height)
+        self._update_scale()
+
+    def on_key_press(self, symbol: int, modifiers: int) -> None:  # pragma: no cover - override as needed
+        pass
+
+    # ------------------------------------------------------------------ #
+    # Helpers for subclasses
+    # ------------------------------------------------------------------ #
+    def draw_scene(self) -> None:  # pragma: no cover - override as needed
+        """하위 클래스가 실제 렌더링을 구현하도록 비워둡니다."""
+        pass
+
+    @staticmethod
+    def bgr_to_rgb(color: Tuple[int, int, int]) -> Tuple[int, int, int]:
+        return (color[2], color[1], color[0])
+
+    def to_arcade_xy(self, point: Tuple[float, float]) -> Tuple[float, float]:
+        x, y = point
+        if self.source_width and self.source_height:
+            x *= self.x_scale
+            y *= self.y_scale
+        window_height = getattr(self.window, "height", 0) or 0
+        y = window_height - y
+        return x, y
+
+    def to_arcade_y(self, y: float) -> float:
+        if self.source_height:
+            y *= self.y_scale
+        window_height = getattr(self.window, "height", 0) or 0
+        return window_height - y

@@ -1,29 +1,39 @@
-import sys
-import pygame
-import cv2
 import json
-import time
 import os
-import numpy as np # (추가)
+import sys
 
-# 씬(Scene) 임포트
-from scenes.main_menu_scene import MainMenuScene
-from scenes.game_scene import GameScene
-from scenes.result_scene import ResultScene
+
+
+import time
+from typing import Any, Dict, Optional
+
+DEPS_PATH = os.path.join(os.path.dirname(__file__), ".deps")
+if os.path.isdir(DEPS_PATH) and DEPS_PATH not in sys.path:
+    sys.path.insert(0, DEPS_PATH)
+
+import arcade
+import cv2
+import pygame
+
 from core.audio_manager import AudioManager
-from core.pose_tracker import PoseTracker # (추가)
+from core.pose_tracker import PoseTracker
+from scenes.calibration_scene import CalibrationScene
+from scenes.game_scene import GameScene
+from scenes.main_menu_scene import MainMenuScene
+from scenes.result_scene import ResultScene
 
-def resource_path(relative_path):
-    """ Get absolute path to resource, works for dev and for PyInstaller """
+
+def resource_path(relative_path: str) -> str:
+    """PyInstaller 지원을 위한 자원 경로 헬퍼."""
     try:
-        base_path = sys._MEIPASS
+        base_path = sys._MEIPASS  # type: ignore[attr-defined]
     except Exception:
         base_path = os.path.abspath(".")
-
     return os.path.join(base_path, relative_path)
 
-def get_best_camera_index():
-    """ 사용 가능한 카메라 인덱스를 역순으로 (e.g., 3, 2, 1, 0) 탐색합니다. """
+
+def get_best_camera_index() -> int:
+    """사용 가능한 카메라 인덱스를 탐색하여 반환합니다."""
     print("사용 가능한 카메라를 찾는 중...")
     for index in range(4, -1, -1):
         cap = cv2.VideoCapture(index, cv2.CAP_AVFOUNDATION)
@@ -31,157 +41,239 @@ def get_best_camera_index():
             print(f"카메라 발견: 인덱스 {index}")
             cap.release()
             return index
-            
-    print("기본 카메라(0번)를 찾지 못했습니다. 0번으로 시도합니다.")
+    print("사용 가능한 카메라가 없습니다. 0번 인덱스로 시도합니다.")
     return 0
 
 
-def main():
-    # 1. Pygame 초기화 (오디오)
+class GameWindow(arcade.Window):
+    """Arcade 기반 메인 윈도우. 카메라 데이터와 포즈 트래킹 결과를 각 Scene(View)에 전달합니다."""
+
+    def __init__(
+        self,
+        width: int,
+        height: int,
+        title: str,
+        config: Dict[str, Any],
+        audio_manager: Optional[AudioManager],
+        pose_tracker: Optional[PoseTracker],
+        capture: Optional[cv2.VideoCapture],
+        source_width: int,
+        source_height: int,
+    ) -> None:
+        super().__init__(width, height, title, resizable=True, update_rate=1 / 60)
+        self.app_config = config
+        self.audio_manager = audio_manager
+        self.pose_tracker = pose_tracker
+        self.capture = capture
+        self.source_width = source_width
+        self.source_height = source_height
+
+        self.update_data: Dict[str, Any] = {
+            "frame": None,
+            "hit_events": [],
+            "landmarks": None,
+            "mask": None,
+            "now": time.time(),
+        }
+        self._current_scene_name: Optional[str] = None
+
+        self._setup_initial_view()
+
+    # ---------------------------------------------------------------------- #
+    # Arcade window lifecycle
+    # ---------------------------------------------------------------------- #
+    def _setup_initial_view(self) -> None:
+        """초기 씬을 생성하여 표시합니다."""
+        menu_scene = self._create_scene("MENU", {})
+        if menu_scene is None:
+            raise RuntimeError("초기 MainMenuScene을 생성할 수 없습니다.")
+        self.show_view(menu_scene)
+        self._current_scene_name = "MENU"
+        print("[GameWindow] initial view: MainMenuScene")
+
+    def _create_scene(self, scene_name: str, persistent_data: Dict[str, Any]) -> Optional[arcade.View]:
+        """씬 이름에 따라 새로운 View 인스턴스를 생성합니다."""
+        scene: Optional[arcade.View] = None
+        if scene_name == "MENU":
+            scene = MainMenuScene(self, self.audio_manager, self.app_config, self.pose_tracker)
+        elif scene_name == "CALIBRATION":
+            scene = CalibrationScene(self, self.audio_manager, self.app_config, self.pose_tracker)
+        elif scene_name == "GAME":
+            scene = GameScene(self, self.audio_manager, self.app_config, self.pose_tracker)
+        elif scene_name == "RESULT":
+            scene = ResultScene(self, self.audio_manager, self.app_config, self.pose_tracker)
+        else:
+            print(f"[경고] 알 수 없는 씬 요청: {scene_name}")
+            return None
+
+        if hasattr(scene, "set_source_dimensions"):
+            scene.set_source_dimensions(self.source_width, self.source_height)  # type: ignore[attr-defined]
+
+        if hasattr(scene, "startup"):
+            scene.startup(persistent_data)  # type: ignore[attr-defined]
+
+        return scene
+
+    def _switch_scene(self, scene_name: str, persistent_data: Dict[str, Any]) -> None:
+        """다음 씬으로 전환합니다."""
+        next_scene = self._create_scene(scene_name, persistent_data)
+        if next_scene is None:
+            print(f"[경고] {scene_name} 씬을 생성하지 못했습니다. 전환을 취소합니다.")
+            return
+
+        self.show_view(next_scene)
+        self._current_scene_name = scene_name
+        print(f"[GameWindow] scene switched to {scene_name}")
+
+    # ---------------------------------------------------------------------- #
+    # Arcade event handlers
+    # ---------------------------------------------------------------------- #
+    def on_update(self, delta_time: float) -> None:
+        """카메라 프레임과 포즈 정보를 갱신하고 현재 뷰에 전달합니다."""
+        frame = None
+        hit_events = []
+        landmarks = None
+        mask = None
+        now = time.time()
+
+        if self.capture is not None:
+            ret, source_frame = self.capture.read()
+            if ret:
+                frame = cv2.flip(source_frame, 1)
+            else:
+                print("[경고] 카메라 프레임을 읽지 못했습니다.")
+
+        if self.pose_tracker is not None and frame is not None:
+            try:
+                pose_frame = frame.copy()
+                hit_events, landmarks, mask = self.pose_tracker.process_frame(pose_frame, now)
+            except Exception as exc:
+                print(f"[경고] PoseTracker 업데이트 실패: {exc}")
+
+        self.update_data.update(
+            {
+                "frame": frame,
+                "hit_events": hit_events,
+                "landmarks": landmarks,
+                "mask": mask,
+                "now": now,
+            }
+        )
+
+        current_view = self.current_view
+        if current_view is None:
+            return
+
+        current_view.update(delta_time, **self.update_data)
+
+        next_scene = getattr(current_view, "next_scene_name", None)
+        if next_scene:
+            persistent = {}
+            if hasattr(current_view, "cleanup"):
+                persistent = current_view.cleanup()  # type: ignore[assignment]
+            self._switch_scene(next_scene, persistent)
+
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
+        if symbol == arcade.key.ESCAPE:
+            print("[GameWindow] ESC pressed. Closing window.")
+            self.close()
+            return
+        current_view = self.current_view
+        if current_view is not None:
+            current_view.on_key_press(symbol, modifiers)
+
+    def on_close(self) -> None:
+        if self.capture is not None:
+            self.capture.release()
+            self.capture = None
+        try:
+            pygame.quit()
+        finally:
+            super().on_close()
+
+
+def main() -> None:
+    # ------------------------------------------------------------------ #
+    # 오디오 초기화
+    # ------------------------------------------------------------------ #
+    audio_manager: Optional[AudioManager] = None
     try:
         pygame.init()
         print("Pygame 모듈 초기화 성공")
-    except Exception as e:
-        print(f"Pygame 초기화 실패: {e}")
-        return
+        audio_manager = AudioManager()
+        sfx_map = {
+            "PERFECT": "hit_perfect.wav",
+            "GREAT": "hit_good.wav",
+            "GOOD": "hit_good.wav",
+            "MISS": "miss.wav",
+            "BOMB!": "bomb.wav",
+        }
+        audio_manager.load_sounds(sfx_map)
+    except Exception as exc:
+        print(f"[경고] 오디오 초기화 실패: {exc}")
+        audio_manager = None
 
-    # 2. OpenCV 카메라 초기화
+    # ------------------------------------------------------------------ #
+    # 카메라 초기화
+    # ------------------------------------------------------------------ #
     camera_index = get_best_camera_index()
-    cap = cv2.VideoCapture(camera_index)
-    if not cap.isOpened():
-        print(f"오류: 카메라(인덱스 {camera_index})를 열 수 없습니다.")
-        pygame.quit()
-        return
-    
-    # (추가) 카메라 해상도 가져오기
-    CAM_WIDTH = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    CAM_HEIGHT = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    print(f"카메라 초기화 성공 (인덱스: {camera_index}, {CAM_WIDTH}x{CAM_HEIGHT})")
+    capture = cv2.VideoCapture(camera_index, cv2.CAP_AVFOUNDATION)
+    if capture is not None and capture.isOpened():
+        source_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)) or 1280
+        source_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 720
+        print(f"카메라 초기화 성공 (인덱스: {camera_index}, {source_width}x{source_height})")
+    else:
+        print(f"[경고] 카메라(인덱스 {camera_index})를 열 수 없습니다. 카메라 없이 실행합니다.")
+        if capture is not None:
+            capture.release()
+        capture = None
+        source_width, source_height = 1280, 720
 
-
-    # 3. 설정 파일 로드
+    # ------------------------------------------------------------------ #
+    # 설정 로드
+    # ------------------------------------------------------------------ #
     try:
         print("Loading config files...")
-        CONFIG = {
-            "rules": json.load(open(resource_path("config/rules.json"), 'r')),
-            "difficulty": json.load(open(resource_path("config/difficulty.json"), 'r')),
-            "ui": json.load(open(resource_path("config/ui.json"), 'r'))
+        config = {
+            "rules": json.load(open(resource_path("config/rules.json"), "r")),
+            "difficulty": json.load(open(resource_path("config/difficulty.json"), "r")),
+            "ui": json.load(open(resource_path("config/ui.json"), "r")),
         }
-    except FileNotFoundError as e:
-        print(f"오류: 필수 config 파일을 찾을 수 없습니다. {e}")
-        cap.release()
+    except FileNotFoundError as exc:
+        print(f"[오류] 필수 config 파일을 찾을 수 없습니다: {exc}")
+        if capture is not None:
+            capture.release()
         pygame.quit()
         return
 
-    # 4. 오디오 매니저 생성
-    audio_manager = AudioManager()
-    sfx_map = {
-        "PERFECT": "hit_perfect.wav",
-        "GREAT": "hit_good.wav",
-        "GOOD": "hit_good.wav",
-        "MISS": "miss.wav",
-        "BOMB!": "bomb.wav"
-    }
-    audio_manager.load_sounds(sfx_map)
-
-    # --- (추가) 5. PoseTracker 생성 (main에서) ---
-    print("Initializing Pose Tracker...")
-    pose_tracker = PoseTracker(CAM_WIDTH, CAM_HEIGHT, CONFIG["rules"], CONFIG["ui"])
-    # --- (추가 끝) ---
-
-    # --- (수정) 6. 모든 씬(Scene) 생성 (pose_tracker 전달) ---
-    scenes = {
-        "MENU": MainMenuScene(cap, audio_manager, CONFIG, pose_tracker),
-        "GAME": GameScene(cap, audio_manager, CONFIG, pose_tracker),
-        "RESULT": ResultScene(cap, audio_manager, CONFIG, pose_tracker)
-    }
-    # --- (수정 끝) ---
-    
-    active_scene = scenes["MENU"] # 시작 씬
-    active_scene.startup({})
-    
-    print("메인 루프를 시작합니다. (첫 씬: MENU)")
-    print("--- 키 안내 ---")
-    print("  ESC : 즉시 종료")
-    print("  0 (캘리브레이션) : 캘리브레이션 스킵")
-    print("  SPACE (메뉴) : 게임 시작")
-    print("  SPACE (결과) : 게임 재시작")
-    print("---------------")
-    
-    # 7. 메인 게임 루프 (씬 매니저)
+    # ------------------------------------------------------------------ #
+    # PoseTracker 초기화
+    # ------------------------------------------------------------------ #
+    pose_tracker: Optional[PoseTracker] = None
     try:
-        while True:
-            # (1) Pygame 이벤트 처리 (창 종료 버튼 'X' 감지용)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    print("종료 이벤트 (pygame.QUIT)")
-                    return
+        print("Initializing Pose Tracker...")
+        pose_tracker = PoseTracker(source_width, source_height, config["rules"], config["ui"])
+    except Exception as exc:
+        print(f"[경고] PoseTracker 초기화 실패: {exc}")
+        pose_tracker = None
 
-            # (2) 카메라 프레임 읽기
-            ret, frame = cap.read()
-            if not ret:
-                print("오류: 프레임 읽기 실패")
-                break
-            frame = cv2.flip(frame, 1) # 좌우 반전
-            
-            # --- (수정) 3. Pose-Tracking 및 배경 합성 (main에서) ---
-            now = time.time()
-            
-            # (수정) 원본 프레임(frame)을 복사하여 포즈 트래커에 전달 (랜드마크가 원본에 그려지는 것을 방지)
-            frame_for_pose = frame.copy()
-            hit_events, landmarks, _ = pose_tracker.process_frame(frame_for_pose, now)
+    # ------------------------------------------------------------------ #
+    # Arcade 윈도우 생성 및 실행
+    # ------------------------------------------------------------------ #
+    window = GameWindow(
+        width=1280,
+        height=720,
+        title="Beat Boxer",
+        config=config,
+        audio_manager=audio_manager,
+        pose_tracker=pose_tracker,
+        capture=capture,
+        source_width=source_width,
+        source_height=source_height,
+    )
+    arcade.run()
+    window.close()
 
-            # 카메라 영상 대신 비어 있는 캔버스를 사용하여 UI와 포즈 포인트만 표시
-            display_frame = np.zeros((CAM_HEIGHT, CAM_WIDTH, 3), dtype=np.uint8)
-            # --- (수정 끝) ---
-
-            # (수정) 4. 현재 씬 로직 업데이트
-            # (원본 frame과 랜드마크 정보를 전달)
-            active_scene.update(frame, hit_events, landmarks, now)
-            
-            # (수정) 5. 현재 씬 그리기
-            # (블러 처리된 display_frame에 UI를 그리도록 전달)
-            active_scene.draw(display_frame)
-            
-            # (수정) 6. 화면 표시
-            # (최종 합성된 display_frame을 표시)
-            cv2.imshow("Beat Boxer", display_frame)
-
-            # (7) OpenCV 키보드 입력 처리
-            key = cv2.waitKey(1) & 0xFF
-
-            # (8) 전역 키 처리 (종료)
-            if key == 27:  # ESC only
-                print("'ESC' 키 입력. 프로그램 종료.")
-                return 
-
-            # (9) 씬에 키 이벤트 전달
-            active_scene.handle_event(key)
-
-            # (10) 씬 전환 확인
-            next_scene_name = active_scene.next_scene_name
-            if next_scene_name:
-                print(f"씬 전환: {active_scene.__class__.__name__} -> {next_scene_name}")
-                persistent_data = active_scene.cleanup() 
-                active_scene = scenes.get(next_scene_name)
-                if not active_scene:
-                    print(f"오류: {next_scene_name} 씬을 찾을 수 없습니다. 종료합니다.")
-                    break
-                active_scene.startup(persistent_data)
-                
-    except KeyboardInterrupt:
-        print("\n(Ctrl+C) 게임 실행을 강제 중단합니다.")
-    except Exception as e: 
-        print(f"메인 루프 중 예상치 못한 오류 발생: {e}")
-        import traceback
-        traceback.print_exc()
-    finally:
-        # 8. 종료
-        print("모든 리소스를 정리합니다...")
-        cap.release()
-        cv2.destroyAllWindows()
-        pygame.quit()
-        print("프로그램을 종료합니다.")
 
 if __name__ == "__main__":
     main()
