@@ -8,6 +8,7 @@ from typing import Any, Deque, Dict, List, Optional, Tuple
 
 import arcade
 
+from core.hit_effect import HitEffectSystem
 from core.note import Note
 from scenes.base_scene import BaseScene
 from scenes.game_mode_strategy import GameModeStrategy
@@ -70,6 +71,22 @@ class GameScene(BaseScene):
         self.timing_offset: float = float(self.config_rules.get("timing_offset", 0.0))
         self.bomb_penalty: int = int(self.config_rules.get("bomb_penalty", -500))
 
+        # Hit effect system
+        self.hit_effect_system: HitEffectSystem = HitEffectSystem()
+        self.last_update_time: float = 0.0
+
+        # Background image
+        self.background_sprite: Optional[arcade.Sprite] = None
+        self.background_sprite_list: Optional[arcade.SpriteList] = None
+        self.background_configured: bool = False
+
+    def on_resize(self, width: int, height: int) -> None:
+        """창 크기 변경 시 배경을 다시 설정합니다."""
+        super().on_resize(width, height)
+        # Reset background configuration flag to allow reconfiguration
+        self.background_configured = False
+        self._configure_background()
+
     # ------------------------------------------------------------------ #
     # Lifecycle
     # ------------------------------------------------------------------ #
@@ -89,6 +106,9 @@ class GameScene(BaseScene):
         self.hit_zone_thickness = int(hud_styles.get("hit_zone_thickness", 6))
         self.hit_zone_color_rgb = self.bgr_to_rgb(tuple(hud_colors.get("hit_zone", (255, 255, 255))))
         self.duck_line_color_rgb = self.bgr_to_rgb(tuple(hud_colors.get("duck_line", (0, 255, 0))))
+        
+        # Configure background sprite position and scale once
+        self._configure_background()
 
     def startup(self, persistent_data):
         super().startup(persistent_data)
@@ -107,6 +127,14 @@ class GameScene(BaseScene):
         self.last_left_fist = None
         self.last_right_fist = None
         self.test_mode = bool(persistent_data.get("test_mode", False))
+
+        self.hit_effect_system.clear()
+        self.last_update_time = 0.0
+
+        # Load background image
+        self._load_background()
+        # Configure background after loading
+        self._configure_background()
 
         self._load_difficulty_settings()
         self._load_beatmap()
@@ -129,7 +157,7 @@ class GameScene(BaseScene):
                 "test_mode": self.test_mode,
             }
         )
-        return super().cleanup()
+        return super().cleanup() 
 
     # ------------------------------------------------------------------ #
     # Input handling
@@ -208,6 +236,14 @@ class GameScene(BaseScene):
         self._process_hit_events(game_time, hit_events, now)
         self._process_misses(game_time, now)
 
+        # Update hit effect system
+        if self.last_update_time > 0:
+            delta_time = now - self.last_update_time
+            # Clamp delta_time to reasonable values to prevent large jumps
+            delta_time = min(delta_time, 0.1)
+            self.hit_effect_system.update(now, delta_time)
+        self.last_update_time = now
+
         if self._is_chart_completed():
             self._trigger_finish(now)
 
@@ -218,8 +254,12 @@ class GameScene(BaseScene):
         width = self.window.width
         height = self.window.height
 
+        # Draw background image first (bottom layer) - position and scale are fixed
+        if self.background_sprite_list:
+            self.background_sprite_list.draw()
+
         arcade.draw_text(
-            "Beat Boxer - Arcade Prototype",
+            " ",
             width / 2,
             height - 60,
             arcade.color.WHITE,
@@ -230,7 +270,7 @@ class GameScene(BaseScene):
         arcade.draw_text(
             self.status_text,
             width / 2,
-            height - 110,
+            height - 100,
             arcade.color.AQUA,
             font_size=20,
             anchor_x="center",
@@ -250,6 +290,12 @@ class GameScene(BaseScene):
         for note in self.active_notes:
             note.draw(self.window.height, color_converter, coord_converter)
 
+        # Draw hit effects (after notes, before HUD)
+        self.hit_effect_system.draw()
+
+        # Draw pose markers (always visible, like calibration screen)
+        self._draw_pose_markers()
+
         stats_x = 40
         stats_y = height - 60
         arcade.draw_text(f"Score: {self.score}", stats_x, stats_y, arcade.color.LIGHT_GREEN, 20)
@@ -265,7 +311,7 @@ class GameScene(BaseScene):
                 arcade.draw_text(
                     self.last_judgement_type,
                     width / 2,
-                    hit_zone_y + 80,
+                    hit_zone_y - 200,
                     judge_color_rgb,
                     font_size=28,
                     anchor_x="center",
@@ -279,16 +325,65 @@ class GameScene(BaseScene):
     # Internal helpers
     # ------------------------------------------------------------------ #
     def _draw_pose_markers(self) -> None:
+        """캘리브레이션 화면과 동일한 스타일로 랜드마크를 그립니다."""
         marker_radius = 8 * max(self.x_scale, self.y_scale, 1.0)
+
         if self.last_nose_pos:
-            cx, cy = self.to_arcade_xy(self.last_nose_pos)
-            arcade.draw_circle_filled(cx, cy, marker_radius, arcade.color.GOLD)
+            self._draw_marker(self.last_nose_pos, arcade.color.GOLD, marker_radius)
+
+        # 화면 기준 왼쪽 = 실제 오른손 (right_fist)
         if self.last_right_fist:
-            cx, cy = self.to_arcade_xy(self.last_right_fist)
-            arcade.draw_circle_filled(cx, cy, marker_radius, arcade.color.LIGHT_SKY_BLUE)
+            self._draw_marker(self.last_right_fist, arcade.color.LIGHT_SKY_BLUE, marker_radius)
+
+        # 화면 기준 오른쪽 = 실제 왼손 (left_fist)
         if self.last_left_fist:
-            cx, cy = self.to_arcade_xy(self.last_left_fist)
-            arcade.draw_circle_filled(cx, cy, marker_radius, arcade.color.SALMON)
+            self._draw_marker(self.last_left_fist, arcade.color.SALMON, marker_radius)
+
+    def _draw_marker(self, pos: Tuple[float, float], color: Tuple[int, int, int], radius: float) -> None:
+        """캘리브레이션 화면과 동일한 스타일로 마커를 그립니다 (색상 원 + 흰색 외곽선)."""
+        cx, cy = self.to_arcade_xy(pos)
+        arcade.draw_circle_filled(cx, cy, radius, color)
+        arcade.draw_circle_outline(cx, cy, radius + 2, arcade.color.WHITE, 2)
+
+    def _load_background(self) -> None:
+        """배경 이미지를 로드합니다."""
+        try:
+            bg_path = os.path.join("assets", "images", "arena_bg.jpg")
+            if os.path.exists(bg_path):
+                # Create sprite for background image
+                self.background_sprite = arcade.Sprite(bg_path, center_x=0, center_y=0)
+                # Create sprite list for drawing
+                self.background_sprite_list = arcade.SpriteList()
+                self.background_sprite_list.append(self.background_sprite)
+                self.background_configured = False
+                print(f"[GameScene] 배경 이미지 로드됨: {bg_path}")
+            else:
+                print(f"[GameScene] 배경 이미지를 찾을 수 없습니다: {bg_path}")
+                self.background_sprite = None
+                self.background_sprite_list = None
+                self.background_configured = False
+        except Exception as e:
+            print(f"[GameScene] 배경 이미지 로드 실패: {e}")
+            self.background_sprite = None
+            self.background_sprite_list = None
+            self.background_configured = False
+
+    def _configure_background(self) -> None:
+        """배경 스프라이트의 위치와 스케일을 설정하여 화면을 완전히 채웁니다."""
+        if self.background_sprite:
+            window_width = getattr(self.window, "width", 0) or 0
+            window_height = getattr(self.window, "height", 0) or 0
+            if window_width > 0 and window_height > 0:
+                # Set position to center of window
+                self.background_sprite.center_x = window_width / 2
+                self.background_sprite.center_y = window_height / 2
+                # Scale sprite to cover entire window (add small margin to ensure full coverage)
+                if self.background_sprite.width > 0 and self.background_sprite.height > 0:
+                    scale_x = window_width / self.background_sprite.width
+                    scale_y = window_height / self.background_sprite.height
+                    # Use max to ensure image covers entire screen, add 0.01 margin for safety
+                    self.background_sprite.scale = max(scale_x, scale_y) * 1.01
+                self.background_configured = True
 
     def _load_difficulty_settings(self) -> None:
         levels = self.config_difficulty.get("levels", {})
@@ -421,6 +516,18 @@ class GameScene(BaseScene):
             self.combo += 1
             self.max_combo = max(self.max_combo, self.combo)
 
+        # Spawn hit effect at hit zone center
+        hit_zone_arcade = self.to_arcade_xy(self.hit_zone_camera)
+        judgement_color_bgr = self.config_colors.get("judgement", {}).get(judgement, (255, 255, 255))
+        judgement_color_rgb = self.bgr_to_rgb(tuple(judgement_color_bgr))
+        self.hit_effect_system.spawn_effect(
+            hit_zone_arcade[0],
+            hit_zone_arcade[1],
+            judgement,
+            judgement_color_rgb,
+            now,
+        )
+
         if self.audio_manager:
             sfx_key = judgement if judgement in self.score_values else "MISS"
             self.audio_manager.play_sfx(sfx_key)
@@ -437,6 +544,19 @@ class GameScene(BaseScene):
                 self.last_judgement_time = now
                 self.judge_log.appendleft(f"MISS ({note.typ})")
                 self.combo = 0
+                
+                # Spawn miss effect at note position
+                note_pos_arcade = self.to_arcade_xy((note.x, note.y))
+                miss_color_bgr = self.config_colors.get("judgement", {}).get("MISS", (255, 255, 255))
+                miss_color_rgb = self.bgr_to_rgb(tuple(miss_color_bgr))
+                self.hit_effect_system.spawn_effect(
+                    note_pos_arcade[0],
+                    note_pos_arcade[1],
+                    "MISS",
+                    miss_color_rgb,
+                    now,
+                )
+                
                 if self.audio_manager:
                     self.audio_manager.play_sfx("MISS")
         self.active_notes = [note for note in self.active_notes if not note.hit and not note.missed]

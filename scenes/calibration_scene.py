@@ -21,6 +21,7 @@ class CalibrationScene(BaseScene):
         self.last_nose_pos: Optional[Tuple[float, float]] = None
         self.last_left_fist: Optional[Tuple[float, float]] = None
         self.last_right_fist: Optional[Tuple[float, float]] = None
+        self.countdown_remaining: Optional[float] = None
 
     def startup(self, persistent_data):
         super().startup(persistent_data)
@@ -31,6 +32,7 @@ class CalibrationScene(BaseScene):
         self.last_nose_pos = None
         self.last_left_fist = None
         self.last_right_fist = None
+        self.countdown_remaining = None
 
     def _build_targets(self) -> None:
         if not self.source_width or not self.source_height:
@@ -71,6 +73,7 @@ class CalibrationScene(BaseScene):
             self.last_nose_pos = None
             self.last_left_fist = None
             self.last_right_fist = None
+            self.countdown_remaining = None
             return
 
         if not self.targets:
@@ -94,9 +97,11 @@ class CalibrationScene(BaseScene):
                 self.hold_start = kwargs.get("now", time.time())
             held_for = kwargs.get("now", time.time()) - self.hold_start
             self.status_text = f"좋아요! 유지하세요... ({held_for:0.1f}s)"
+            self.countdown_remaining = max(0.0, self.hold_requirement - held_for)
             if held_for >= self.hold_requirement:
                 self.pose_tracker.calibrate_from_pose(landmarks)
                 self.persistent_data["calibrated"] = True
+                self.countdown_remaining = 0.0
                 self.next_scene_name = "GAME"
         else:
             cues = []
@@ -109,6 +114,7 @@ class CalibrationScene(BaseScene):
                 cues.append("화면 왼쪽 손을 표시된 위치에 맞춰 주세요.")
             self.status_text = " / ".join(cues) if cues else "자세를 다시 맞춰 주세요."
             self.hold_start = None
+            self.countdown_remaining = None
 
     def draw_scene(self) -> None:
         width = max(1, int(self.window.width))
@@ -126,20 +132,18 @@ class CalibrationScene(BaseScene):
         )
 
         arcade.draw_text(
-            self.status_text,
+            "",
             center_x,
             center_y - 60,
             arcade.color.AQUA,
             font_size=18,
             anchor_x="center",
-            multiline=True,
-            width=width * 0.8,
         )
 
         if not self.targets:
             return
 
-        def draw_target(target_name: str, color: Tuple[int, int, int], ok: bool) -> None:
+        def draw_target(target_name: str, color: Tuple[int, int, int], ok: bool, label: str) -> None:
             target = self.targets.get(target_name)
             if not target:
                 return
@@ -148,17 +152,29 @@ class CalibrationScene(BaseScene):
             arcade.draw_circle_outline(cx, cy, radius, color, 4)
             if ok:
                 arcade.draw_circle_filled(cx, cy, radius * 0.6, color)
+            arcade.draw_text(label, cx, cy - radius - 30, color, font_size=16, anchor_x="center")
 
         head_ok, left_ok, right_ok = self.last_status
         head_color = arcade.color.WHITE
         left_color = arcade.color.ORANGE_RED
         right_color = arcade.color.DODGER_BLUE
 
-        draw_target("head", head_color, head_ok)
-        draw_target("left_fist", right_color, right_ok)  # 화면 기준 왼쪽 = 실제 오른손
-        draw_target("right_fist", left_color, left_ok)  # 화면 기준 오른쪽 = 실제 왼손
+        draw_target("head", head_color, head_ok, "머리를 원 안에 맞춰 주세요.")
+        draw_target("left_fist", right_color, left_ok, "화면 오른쪽 손을 표시된 위치에 맞춰 주세요.")  # 화면 기준 왼쪽 = 실제 오른손
+        draw_target("right_fist", left_color, right_ok, "화면 왼쪽 손을 표시된 위치에 맞춰 주세요.")  # 화면 기준 오른쪽 = 실제 왼손
 
         self._draw_pose_markers()
+
+        if self.countdown_remaining is not None:
+            arcade.draw_text(
+                f"{self.countdown_remaining:0.2f}",
+                width * 0.5,
+                height * 0.4,
+                arcade.color.WHITE,
+                font_size=72,
+                anchor_x="center",
+                anchor_y="center",
+            )
 
     def _draw_pose_markers(self) -> None:
         marker_radius = 8 * max(self.x_scale, self.y_scale, 1.0)
@@ -177,4 +193,22 @@ class CalibrationScene(BaseScene):
         cx, cy = self.to_arcade_xy(pos)
         arcade.draw_circle_filled(cx, cy, radius, color)
         arcade.draw_circle_outline(cx, cy, radius + 2, arcade.color.WHITE, 2)
+
+    def on_key_press(self, symbol: int, modifiers: int) -> None:
+        if symbol == arcade.key.KEY_0:
+            print("[CalibrationScene] '0' pressed – skipping calibration (normal mode).")
+            self.persistent_data["calibrated"] = False
+            self.persistent_data["test_mode"] = False
+            if self.pose_tracker:
+                self.pose_tracker.set_test_mode(False)
+            self.next_scene_name = "GAME"
+            print(f"[CalibrationScene] Setting next_scene_name to: {self.next_scene_name}")
+        elif symbol == arcade.key.KEY_9:
+            print("[CalibrationScene] '9' pressed – skipping calibration (test mode).")
+            self.persistent_data["calibrated"] = False
+            self.persistent_data["test_mode"] = True
+            if self.pose_tracker:
+                self.pose_tracker.set_test_mode(True)
+            self.next_scene_name = "GAME"
+            print(f"[CalibrationScene] Setting next_scene_name to: {self.next_scene_name}")
 

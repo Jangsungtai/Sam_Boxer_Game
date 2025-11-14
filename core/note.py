@@ -53,7 +53,7 @@ class Note:
         self.x = self.x0
         self.y = self.y0
 
-        type_to_label = {"JAB_L": "1", "JAB_R": "2", "DUCK": "3", "BOMB": "4"}
+        type_to_label = {"JAB_L": "J", "JAB_R": "S", "DUCK": "D", "BOMB": "4"}
         self.label = type_to_label.get(self.typ)
 
     def _initial_position(self, width: int, height: int) -> Tuple[int, int]:
@@ -115,12 +115,13 @@ class Note:
         arcade.draw_text(
             self.label,
             center_x,
-            center_y - font_size / 3,
+            center_y,
             arcade.color.BLACK,
             font_size=font_size,
             anchor_x="center",
             anchor_y="center",
         )
+#center_y """- font_size / 3""",
 
     @staticmethod
     def _draw_rect(center_x: float, center_y: float, width: float, height: float, color) -> None:

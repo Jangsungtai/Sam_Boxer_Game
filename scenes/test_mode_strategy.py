@@ -37,8 +37,8 @@ class TestModeStrategy(GameModeStrategy):
         game_scene = self.game_scene
         hit_center = game_scene.to_arcade_xy(game_scene.hit_zone_camera)
 
-        # Draw pose markers and connection lines
-        game_scene._draw_pose_markers()
+        # Note: Pose markers are now drawn in GameScene.draw_scene() for all modes
+        # Only draw connection lines in test mode
 
         def to_screen(point):
             return game_scene.to_arcade_xy(point) if point else None
