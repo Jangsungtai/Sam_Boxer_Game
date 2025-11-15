@@ -5,7 +5,7 @@ OpenCV로 카메라 영상을 받아 실시간으로 사용자의 펀치(Jab) �
 
 ## 테스트 모드 영상 
 
-<img src="assets/Boxing test mode.gif" alt="Test Mode Demo" width="100%">
+<video src="assets/boxing test mode.mp4" alt="Test Mode Demo" width="100%" autoplay loop muted playsinline></video>
 
 
 ## 🕹️ 주요 기능
