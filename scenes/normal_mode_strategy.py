@@ -13,10 +13,5 @@ class NormalModeStrategy(GameModeStrategy):
         pass
 
     def _draw_mode_specific_hud(self) -> None:
-        arcade.draw_text(
-            "Normal Mode",
-            self.game_scene.window.width - 160,
-            self.game_scene.window.height - 40,
-            arcade.color.ORANGE,
-            font_size=18,
-        )
+        # Normal Mode 텍스트 제거
+        pass

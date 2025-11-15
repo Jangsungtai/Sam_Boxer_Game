@@ -97,6 +97,8 @@ class Note:
         screen_height: int,
         color_converter: Callable[[Tuple[int, int, int]], Tuple[int, int, int]],
         coord_converter: Callable[[Tuple[int, int]], Tuple[float, float]],
+        scale_x: float = 1.0,
+        scale_y: float = 1.0,
     ) -> None:
         if self.hit and not self.missed:
             return
@@ -104,26 +106,32 @@ class Note:
         color_rgb = color_converter(self.color_bgr)
         outline_rgb = color_converter(self.outline_bgr)
         center_x, center_y = coord_converter((self.x, self.y))
+        
+        # 스케일 적용 (평균 스케일 사용)
+        scale = (scale_x + scale_y) / 2.0
 
         if self.typ == "DUCK":
-            width = self.duck_half_width * 2
-            height = self.duck_half_height * 2
+            width = (self.duck_half_width * 2) * scale_x
+            height = (self.duck_half_height * 2) * scale_y
+            thickness = self.duck_outline_thickness * scale
             self._draw_rect(center_x, center_y, width, height, color_rgb)
-            self._draw_rect_outline(center_x, center_y, width, height, outline_rgb, self.duck_outline_thickness)
+            self._draw_rect_outline(center_x, center_y, width, height, outline_rgb, int(thickness))
         else:
-            arcade.draw_circle_filled(center_x, center_y, self.circle_radius, color_rgb)
-            arcade.draw_circle_outline(center_x, center_y, self.circle_radius, outline_rgb, self.circle_outline_thickness)
+            radius = self.circle_radius * scale
+            thickness = self.circle_outline_thickness * scale
+            arcade.draw_circle_filled(center_x, center_y, int(radius), color_rgb)
+            arcade.draw_circle_outline(center_x, center_y, int(radius), outline_rgb, int(thickness))
 
         if not self.label:
             return
 
-        font_size = self.label_font_size_circle if self.typ != "DUCK" else self.label_font_size_duck
+        font_size = (self.label_font_size_circle if self.typ != "DUCK" else self.label_font_size_duck) * scale
         arcade.draw_text(
             self.label,
             center_x,
             center_y,
             arcade.color.BLACK,
-            font_size=font_size,
+            font_size=int(font_size),
             anchor_x="center",
             anchor_y="center",
         )

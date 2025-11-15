@@ -79,6 +79,15 @@ class BeatmapLoader:
                 line = raw_line.strip()
                 if not line or line.startswith("#"):
                     continue
+                
+                # 주석 제거 (# 이후 부분 제거)
+                if "#" in line:
+                    line = line.split("#")[0].strip()
+                
+                # 주석 제거 후 빈 줄이면 건너뛰기
+                if not line:
+                    continue
+                
                 for ch in line:
                     note_type = mapping.get(ch)
                     if note_type:

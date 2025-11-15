@@ -323,7 +323,12 @@ class GameScene(BaseScene):
         hit_color = self.hit_zone_color_rgb
         if self.mode_strategy:
             hit_color = self.mode_strategy.get_hit_zone_color(hit_color)
-        arcade.draw_circle_outline(hit_zone_x, hit_zone_y, self.hit_zone_radius, hit_color, self.hit_zone_thickness)
+        
+        # 스케일 적용 (평균 스케일 사용)
+        scale = (self.x_scale + self.y_scale) / 2.0
+        scaled_radius = self.hit_zone_radius * scale
+        scaled_thickness = self.hit_zone_thickness * scale
+        arcade.draw_circle_outline(hit_zone_x, hit_zone_y, int(scaled_radius), hit_color, int(scaled_thickness))
 
         # Draw Dodge lines
         self._draw_dodge_lines(width, height)
@@ -333,7 +338,7 @@ class GameScene(BaseScene):
             coord_converter = self.to_arcade_xy
             color_converter = self.bgr_to_rgb
             for note in self.note_manager.get_active_notes():
-                note.draw(height, color_converter, coord_converter)
+                note.draw(height, color_converter, coord_converter, self.x_scale, self.y_scale)
 
         # Draw hit effects
         self.hit_effect_system.draw()
