@@ -58,7 +58,7 @@ class TestModeStrategy(GameModeStrategy):
 
         # Floating judgement logs just below the hit zone
         log_start_y = hit_center[1] - game_scene.hit_zone_radius - 40
-        for idx, entry in enumerate(game_scene.judge_log):
+        for idx, entry in enumerate(game_scene.game_state.judge_log):
             arcade.draw_text(
                 entry,
                 hit_center[0] - 120,
@@ -129,9 +129,10 @@ class TestModeStrategy(GameModeStrategy):
         )
         
         # 활성 노트 정보
-        active_jab_notes = [n for n in game_scene.active_notes if n.typ in ["JAB_L", "JAB_R"] and not n.hit and not n.missed]
-        if game_scene.song_start_time:
-            game_time = now - game_scene.song_start_time
+        active_notes = game_scene.note_manager.get_active_notes() if game_scene.note_manager else []
+        active_jab_notes = [n for n in active_notes if n.typ in ["JAB_L", "JAB_R"] and not n.hit and not n.missed]
+        if game_scene.game_state.song_start_time:
+            game_time = now - game_scene.game_state.song_start_time
             arcade.draw_text(
                 f"Game Time: {game_time:.2f}s",
                 debug_start_x,

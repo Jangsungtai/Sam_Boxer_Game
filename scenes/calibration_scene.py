@@ -109,9 +109,9 @@ class CalibrationScene(BaseScene):
             if not head_ok:
                 cues.append("머리를 원 안에 맞춰 주세요.")
             if not left_ok:
-                cues.append("화면 오른쪽 손을 표시된 위치에 맞춰 주세요.")
-            if not right_ok:
                 cues.append("화면 왼쪽 손을 표시된 위치에 맞춰 주세요.")
+            if not right_ok:
+                cues.append("화면 오른쪽 손을 표시된 위치에 맞춰 주세요.")
             self.status_text = " / ".join(cues) if cues else "자세를 다시 맞춰 주세요."
             self.hold_start = None
             self.countdown_remaining = None
@@ -160,8 +160,9 @@ class CalibrationScene(BaseScene):
         right_color = arcade.color.DODGER_BLUE
 
         draw_target("head", head_color, head_ok, "머리를 원 안에 맞춰 주세요.")
-        draw_target("left_fist", right_color, left_ok, "화면 오른쪽 손을 표시된 위치에 맞춰 주세요.")  # 화면 기준 왼쪽 = 실제 오른손
-        draw_target("right_fist", left_color, right_ok, "화면 왼쪽 손을 표시된 위치에 맞춰 주세요.")  # 화면 기준 오른쪽 = 실제 왼손
+        # 좌우 반전: 화면 왼쪽 = 실제 왼손, 화면 오른쪽 = 실제 오른손
+        draw_target("left_fist", left_color, left_ok, "화면 왼쪽 손을 표시된 위치에 맞춰 주세요.")
+        draw_target("right_fist", right_color, right_ok, "화면 오른쪽 손을 표시된 위치에 맞춰 주세요.")
 
         self._draw_pose_markers()
 

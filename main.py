@@ -1,9 +1,8 @@
-import json
 import os
 import sys
 
 import time
-from typing import Any, Dict, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 DEPS_PATH = os.path.join(os.path.dirname(__file__), ".deps")
 if os.path.isdir(DEPS_PATH) and DEPS_PATH not in sys.path:
@@ -11,36 +10,16 @@ if os.path.isdir(DEPS_PATH) and DEPS_PATH not in sys.path:
 
 import arcade
 import cv2
-import pygame
 
-from core.audio_manager import AudioManager
-from core.pose_tracker import PoseTracker
+from core.game_factory import GameFactory, resource_path
 from scenes.calibration_scene import CalibrationScene
 from scenes.game_scene import GameScene
 from scenes.main_menu_scene import MainMenuScene
 from scenes.result_scene import ResultScene
 
-
-def resource_path(relative_path: str) -> str:
-    """PyInstaller 지원을 위한 자원 경로 헬퍼."""
-    try:
-        base_path = sys._MEIPASS  # type: ignore[attr-defined]
-    except Exception:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
-
-def get_best_camera_index() -> int:
-    """사용 가능한 카메라 인덱스를 탐색하여 반환합니다."""
-    print("사용 가능한 카메라를 찾는 중...")
-    for index in range(4, -1, -1):
-        cap = cv2.VideoCapture(index, cv2.CAP_AVFOUNDATION)
-        if cap.isOpened():
-            print(f"카메라 발견: 인덱스 {index}")
-            cap.release()
-            return index
-    print("사용 가능한 카메라가 없습니다. 0번 인덱스로 시도합니다.")
-    return 0
+if TYPE_CHECKING:
+    from core.audio_manager import AudioManager
+    from core.pose_tracker import PoseTracker
 
 
 class GameWindow(arcade.Window):
@@ -52,8 +31,8 @@ class GameWindow(arcade.Window):
         height: int,
         title: str,
         config: Dict[str, Any],
-        audio_manager: Optional[AudioManager],
-        pose_tracker: Optional[PoseTracker],
+        audio_manager: Optional[Any],
+        pose_tracker: Optional[Any],
         capture: Optional[cv2.VideoCapture],
         source_width: int,
         source_height: int,
@@ -184,76 +163,31 @@ class GameWindow(arcade.Window):
         if self.capture is not None:
             self.capture.release()
             self.capture = None
-        try:
-            pygame.quit()
-        finally:
-            super().on_close()
+        super().on_close()
 
 
 def main() -> None:
     # ------------------------------------------------------------------ #
-    # 오디오 초기화
-    # ------------------------------------------------------------------ #
-    audio_manager: Optional[AudioManager] = None
-    try:
-        pygame.init()
-        print("Pygame 모듈 초기화 성공")
-        audio_manager = AudioManager()
-        sfx_map = {
-            "PERFECT": "hit_perfect.wav",
-            "GREAT": "hit_good.wav",
-            "GOOD": "hit_good.wav",
-            "MISS": "miss.wav",
-            "BOMB!": "bomb.wav",
-        }
-        audio_manager.load_sounds(sfx_map)
-    except Exception as exc:
-        print(f"[경고] 오디오 초기화 실패: {exc}")
-        audio_manager = None
-
-    # ------------------------------------------------------------------ #
-    # 카메라 초기화
-    # ------------------------------------------------------------------ #
-    camera_index = get_best_camera_index()
-    capture = cv2.VideoCapture(camera_index, cv2.CAP_AVFOUNDATION)
-    if capture is not None and capture.isOpened():
-        source_width = int(capture.get(cv2.CAP_PROP_FRAME_WIDTH)) or 1280
-        source_height = int(capture.get(cv2.CAP_PROP_FRAME_HEIGHT)) or 720
-        print(f"카메라 초기화 성공 (인덱스: {camera_index}, {source_width}x{source_height})")
-    else:
-        print(f"[경고] 카메라(인덱스 {camera_index})를 열 수 없습니다. 카메라 없이 실행합니다.")
-        if capture is not None:
-            capture.release()
-        capture = None
-        source_width, source_height = 1280, 720
-
+    # 컴포넌트 초기화 (GameFactory 사용)
     # ------------------------------------------------------------------ #
     # 설정 로드
-    # ------------------------------------------------------------------ #
     try:
-        print("Loading config files...")
-        config = {
-            "rules": json.load(open(resource_path("config/rules.json"), "r")),
-            "difficulty": json.load(open(resource_path("config/difficulty.json"), "r")),
-            "ui": json.load(open(resource_path("config/ui.json"), "r")),
-        }
+        config_manager = GameFactory.create_config_manager()
+        config = config_manager.get_config()
     except FileNotFoundError as exc:
-        print(f"[오류] 필수 config 파일을 찾을 수 없습니다: {exc}")
-        if capture is not None:
-            capture.release()
-        pygame.quit()
+        from core.logger import get_logger
+        logger = get_logger()
+        logger.error(f"필수 config 파일을 찾을 수 없습니다: {exc}")
         return
 
-    # ------------------------------------------------------------------ #
+    # 오디오 초기화
+    audio_manager = GameFactory.create_audio_manager()
+
+    # 카메라 초기화
+    capture, source_width, source_height = GameFactory.create_camera()
+
     # PoseTracker 초기화
-    # ------------------------------------------------------------------ #
-    pose_tracker: Optional[PoseTracker] = None
-    try:
-        print("Initializing Pose Tracker...")
-        pose_tracker = PoseTracker(source_width, source_height, config["rules"], config["ui"])
-    except Exception as exc:
-        print(f"[경고] PoseTracker 초기화 실패: {exc}")
-        pose_tracker = None
+    pose_tracker = GameFactory.create_pose_tracker(source_width, source_height, config)
 
     # ------------------------------------------------------------------ #
     # Arcade 윈도우 생성 및 실행

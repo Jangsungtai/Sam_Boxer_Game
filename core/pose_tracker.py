@@ -525,15 +525,17 @@ class PoseTracker:
         left_fist_center = calc_centroid(left_keys)
         right_fist_center = calc_centroid(right_keys)
         
-        # 왼쪽 펀치 타겟은 실제 왼손으로, 오른쪽 펀치 타겟은 실제 오른손으로 확인
+        # cv2.flip으로 화면이 반전되어 있으므로 좌우를 반전시켜야 함
+        # 화면 왼쪽 타겟(left_fist) -> MediaPipe의 실제 오른손(right_wrist) 사용
+        # 화면 오른쪽 타겟(right_fist) -> MediaPipe의 실제 왼손(left_wrist) 사용
         lw_ok = False
         rw_ok = False
         
-        if left_fist_center:  # 왼쪽 펀치 타겟 -> 실제 왼손 사용
-            lw_ok = dist(left_fist_center, target_l["pos"]) < target_l["radius"]
+        if right_fist_center:  # 화면 왼쪽 타겟 -> 실제 오른손 사용
+            lw_ok = dist(right_fist_center, target_l["pos"]) < target_l["radius"]
         
-        if right_fist_center:  # 오른쪽 펀치 타겟 -> 실제 오른손 사용
-            rw_ok = dist(right_fist_center, target_r["pos"]) < target_r["radius"]
+        if left_fist_center:  # 화면 오른쪽 타겟 -> 실제 왼손 사용
+            rw_ok = dist(left_fist_center, target_r["pos"]) < target_r["radius"]
         
         all_ok = head_ok and lw_ok and rw_ok
         
