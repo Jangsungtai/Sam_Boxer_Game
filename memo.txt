@@ -91,7 +91,7 @@ git push origin main
 # 설명: 출시 내용이 반영된 'main' 브랜치를 GitHub에 업로드합니다.
 
 # (버전 태그 생성 및 푸시)
-git tag -a v1.0.0 -m "Beat Boxer v1.0.0 출시"
+git tag -a v1.0.0 -m "Beat Boxer v1.0.0"
 # 설명: 현재 상태에 'v1.0.0'이라는 버전 스티커(태그)를 붙입니다.
 
 git push origin v1.0.0
