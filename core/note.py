@@ -53,7 +53,7 @@ class Note:
         self.x = self.x0
         self.y = self.y0
 
-        type_to_label = {"JAB_L": "J", "JAB_R": "S", "DUCK": "D", "BOMB": "4"}
+        type_to_label = {"JAB_L": "J", "JAB_R": "S", "DUCK": "D", "BOMB": "4", "WEAVE_L": "WL", "WEAVE_R": "WR"}
         self.label = type_to_label.get(self.typ)
 
     def _initial_position(self, width: int, height: int) -> Tuple[int, int]:
@@ -67,6 +67,12 @@ class Note:
             return target_x, -100
         if self.typ == "BOMB":
             return (-100 if self.lane == "L" else width + 100, target_y)
+        if self.typ == "WEAVE_L":
+            # 위빙 L: 왼쪽 레인에서 시작하여 중앙으로 이동
+            return -100, -100
+        if self.typ == "WEAVE_R":
+            # 위빙 R: 오른쪽 레인에서 시작하여 중앙으로 이동
+            return width + 100, -100
         return target_x, target_y
 
     def get_progress(self, now: float, start_time: float) -> float:

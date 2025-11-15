@@ -161,57 +161,63 @@ class PoseTracker:
         angL = self._angle(LS, LE, LW); angR = self._angle(RS, RE, RW)
         
         hit_zone_x = self.width // 2
-        # (수정) cv2.flip을 고려하여 반대로 판단:
-        # JAB_L (화면 왼쪽 펀치)는 실제 오른손이 화면 왼쪽에 있을 때 발생
-        # JAB_R (화면 오른쪽 펀치)는 실제 왼손이 화면 오른쪽에 있을 때 발생
-        left_zone_for_jab_l = RW[0] < hit_zone_x  # 실제 오른손이 화면 왼쪽에 있으면
-        right_zone_for_jab_r = LW[0] > hit_zone_x  # 실제 왼손이 화면 오른쪽에 있으면
+        # MediaPipe는 반전된 프레임을 처리하므로, 랜드마크 좌표도 반전된 프레임 기준입니다.
+        # 화면에서 보이는 위치:
+        # - 화면 왼쪽에 보이는 손 = 사용자의 오른손 = RIGHT_WRIST
+        # - 화면 오른쪽에 보이는 손 = 사용자의 왼손 = LEFT_WRIST
+        # MediaPipe 좌표 기준으로는 (반전된 프레임 기준):
+        # - RIGHT_WRIST가 화면 왼쪽에 있으면 RW[0] < hit_zone_x
+        # - LEFT_WRIST가 화면 오른쪽에 있으면 LW[0] > hit_zone_x
+        left_zone_for_jab_l = RW[0] < hit_zone_x  # RIGHT_WRIST가 화면 왼쪽에 있으면
+        right_zone_for_jab_r = LW[0] > hit_zone_x  # LEFT_WRIST가 화면 오른쪽에 있으면
 
         if self.test_mode:
             # 테스트 모드: 손의 중심점이 히트존을 나갔다가 다시 들어온 것을 감지
             # spatial_judge_mode에 따라 손의 중심점 계산
             spatial_mode = self.config_rules.get("spatial_judge_mode", 2)
             
-            # 왼손 중심점 계산 (JAB_R에 사용)
-            left_wrist = LW
-            left_pinky = P(mp_pose.PoseLandmark.LEFT_PINKY) if spatial_mode == 2 else None
-            left_index = P(mp_pose.PoseLandmark.LEFT_INDEX) if spatial_mode == 2 else None
-            left_thumb = P(mp_pose.PoseLandmark.LEFT_THUMB) if spatial_mode == 2 else None
-            
-            if spatial_mode == 1:
-                left_center = left_wrist
-            else:
-                left_points = [p for p in [left_wrist, left_pinky, left_index, left_thumb] if p is not None]
-                if left_points:
-                    left_center = (np.mean([p[0] for p in left_points]), np.mean([p[1] for p in left_points]))
-                else:
-                    left_center = None
-            
-            # 오른손 중심점 계산 (JAB_L에 사용)
+            # cv2.flip 고려: 화면 왼쪽 펀치(JAB_L)는 RIGHT_WRIST 사용, 화면 오른쪽 펀치(JAB_R)는 LEFT_WRIST 사용
+            # RIGHT_WRIST 중심점 계산 (JAB_L에 사용 - 화면 왼쪽에 보이는 손)
             right_wrist = RW
             right_pinky = P(mp_pose.PoseLandmark.RIGHT_PINKY) if spatial_mode == 2 else None
             right_index = P(mp_pose.PoseLandmark.RIGHT_INDEX) if spatial_mode == 2 else None
             right_thumb = P(mp_pose.PoseLandmark.RIGHT_THUMB) if spatial_mode == 2 else None
             
             if spatial_mode == 1:
-                right_center = right_wrist
+                right_center_for_jab_l = right_wrist
             else:
                 right_points = [p for p in [right_wrist, right_pinky, right_index, right_thumb] if p is not None]
                 if right_points:
-                    right_center = (np.mean([p[0] for p in right_points]), np.mean([p[1] for p in right_points]))
+                    right_center_for_jab_l = (np.mean([p[0] for p in right_points]), np.mean([p[1] for p in right_points]))
                 else:
-                    right_center = None
+                    right_center_for_jab_l = None
+            
+            # LEFT_WRIST 중심점 계산 (JAB_R에 사용 - 화면 오른쪽에 보이는 손)
+            left_wrist = LW
+            left_pinky = P(mp_pose.PoseLandmark.LEFT_PINKY) if spatial_mode == 2 else None
+            left_index = P(mp_pose.PoseLandmark.LEFT_INDEX) if spatial_mode == 2 else None
+            left_thumb = P(mp_pose.PoseLandmark.LEFT_THUMB) if spatial_mode == 2 else None
+            
+            if spatial_mode == 1:
+                left_center_for_jab_r = left_wrist
+            else:
+                left_points = [p for p in [left_wrist, left_pinky, left_index, left_thumb] if p is not None]
+                if left_points:
+                    left_center_for_jab_r = (np.mean([p[0] for p in left_points]), np.mean([p[1] for p in left_points]))
+                else:
+                    left_center_for_jab_r = None
             
             # 히트존 안에 있는지 확인
             def is_inside_hit_zone(center):
                 if center is None:
                     return False
+                # MediaPipe 좌표는 이미 반전된 프레임 기준이므로 추가 반전 불필요
                 dist = np.sqrt((center[0] - self.hit_zone_x)**2 + (center[1] - self.hit_zone_y)**2)
                 return dist <= self.hit_zone_radius
             
-            # JAB_L: 실제 오른손이 히트존을 나갔다가 다시 들어온 경우
-            if right_center:
-                right_inside = is_inside_hit_zone(right_center)
+            # JAB_L: RIGHT_WRIST(화면 왼쪽에 보이는 손)가 히트존을 나갔다가 다시 들어온 경우
+            if right_center_for_jab_l:
+                right_inside = is_inside_hit_zone(right_center_for_jab_l)
                 if not self.right_was_outside_hit_zone and not right_inside:
                     # 히트존 밖으로 나감
                     self.right_was_outside_hit_zone = True
@@ -222,9 +228,9 @@ class PoseTracker:
                         self.last_hit_t["L"] = now
                         self.right_was_outside_hit_zone = False
             
-            # JAB_R: 실제 왼손이 히트존을 나갔다가 다시 들어온 경우
-            if left_center:
-                left_inside = is_inside_hit_zone(left_center)
+            # JAB_R: LEFT_WRIST(화면 오른쪽에 보이는 손)가 히트존을 나갔다가 다시 들어온 경우
+            if left_center_for_jab_r:
+                left_inside = is_inside_hit_zone(left_center_for_jab_r)
                 if not self.left_was_outside_hit_zone and not left_inside:
                     # 히트존 밖으로 나감
                     self.left_was_outside_hit_zone = True
@@ -235,15 +241,80 @@ class PoseTracker:
                         self.last_hit_t["R"] = now
                         self.left_was_outside_hit_zone = False
         else:
-            # 일반 모드: 기존 로직 (속도, 각도, 구역, 쿨타임 모두 체크)
-            # (수정) cv2.flip을 고려하여 반대로 판단
-            if (vL >= self.V_THRESH and angL >= self.ANG_THRESH and left_zone_for_jab_l and (now - self.last_hit_t["L"] > self.REFRACTORY)):
+            # 일반 모드: 속도, hit zone 내부, 쿨타임 체크
+            # cv2.flip 고려: JAB_L은 RIGHT_WRIST(화면 왼쪽)의 속도 사용, JAB_R은 LEFT_WRIST(화면 오른쪽)의 속도 사용
+            # 주먹 중심점이 hit zone 안에 있는지 확인
+            spatial_mode = self.config_rules.get("spatial_judge_mode", 2)
+            
+            # JAB_L: RIGHT_WRIST 중심점 계산
+            right_wrist = RW
+            right_pinky = P(mp_pose.PoseLandmark.RIGHT_PINKY) if spatial_mode == 2 else None
+            right_index = P(mp_pose.PoseLandmark.RIGHT_INDEX) if spatial_mode == 2 else None
+            right_thumb = P(mp_pose.PoseLandmark.RIGHT_THUMB) if spatial_mode == 2 else None
+            
+            if spatial_mode == 1:
+                right_center_for_jab_l = right_wrist
+            else:
+                right_points = [p for p in [right_wrist, right_pinky, right_index, right_thumb] if p is not None]
+                if right_points:
+                    right_center_for_jab_l = (np.mean([p[0] for p in right_points]), np.mean([p[1] for p in right_points]))
+                else:
+                    right_center_for_jab_l = None
+            
+            # JAB_R: LEFT_WRIST 중심점 계산
+            left_wrist = LW
+            left_pinky = P(mp_pose.PoseLandmark.LEFT_PINKY) if spatial_mode == 2 else None
+            left_index = P(mp_pose.PoseLandmark.LEFT_INDEX) if spatial_mode == 2 else None
+            left_thumb = P(mp_pose.PoseLandmark.LEFT_THUMB) if spatial_mode == 2 else None
+            
+            if spatial_mode == 1:
+                left_center_for_jab_r = left_wrist
+            else:
+                left_points = [p for p in [left_wrist, left_pinky, left_index, left_thumb] if p is not None]
+                if left_points:
+                    left_center_for_jab_r = (np.mean([p[0] for p in left_points]), np.mean([p[1] for p in left_points]))
+                else:
+                    left_center_for_jab_r = None
+            
+            # 히트존 안에 있는지 확인하는 함수
+            def is_inside_hit_zone(center):
+                if center is None:
+                    return False
+                # MediaPipe 좌표는 이미 반전된 프레임 기준이므로 추가 반전 불필요
+                dist = np.sqrt((center[0] - self.hit_zone_x)**2 + (center[1] - self.hit_zone_y)**2)
+                return dist <= self.hit_zone_radius
+            
+            # JAB_L 판정 (각도 조건 제거, hit zone 체크 추가)
+            jab_l_conditions = {
+                "vR": vR >= self.V_THRESH,
+                "in_hit_zone": right_center_for_jab_l is not None and is_inside_hit_zone(right_center_for_jab_l),
+                "cooldown": (now - self.last_hit_t["L"] > self.REFRACTORY)
+            }
+            if all(jab_l_conditions.values()):
                 hit_events.append({"type": "JAB_L", "t_hit": now})
                 self.last_hit_t["L"] = now
+                if self.test_mode:
+                    print(f"[JAB_L HIT] vR={vR:.2f}, angR={angR:.1f}, RW[0]={RW[0]:.1f}, hit_zone_x={hit_zone_x}, in_zone=True")
+            elif self.test_mode and vR > 0.3:  # test mode에서만 조건이 거의 충족될 때 로그
+                failed = [k for k, v in jab_l_conditions.items() if not v]
+                in_zone = right_center_for_jab_l is not None and is_inside_hit_zone(right_center_for_jab_l)
+                print(f"[JAB_L FAIL] {failed} | vR={vR:.2f}/{self.V_THRESH}, angR={angR:.1f}, in_zone={in_zone}, RW[0]={RW[0]:.1f}, cooldown={(now-self.last_hit_t['L']):.2f}s")
 
-            if (vR >= self.V_THRESH and angR >= self.ANG_THRESH and right_zone_for_jab_r and (now - self.last_hit_t["R"] > self.REFRACTORY)):
+            # JAB_R 판정 (각도 조건 제거, hit zone 체크 추가)
+            jab_r_conditions = {
+                "vL": vL >= self.V_THRESH,
+                "in_hit_zone": left_center_for_jab_r is not None and is_inside_hit_zone(left_center_for_jab_r),
+                "cooldown": (now - self.last_hit_t["R"] > self.REFRACTORY)
+            }
+            if all(jab_r_conditions.values()):
                 hit_events.append({"type": "JAB_R", "t_hit": now})
                 self.last_hit_t["R"] = now
+                if self.test_mode:
+                    print(f"[JAB_R HIT] vL={vL:.2f}, angL={angL:.1f}, LW[0]={LW[0]:.1f}, hit_zone_x={hit_zone_x}, in_zone=True")
+            elif self.test_mode and vL > 0.3:  # test mode에서만 조건이 거의 충족될 때 로그
+                failed = [k for k, v in jab_r_conditions.items() if not v]
+                in_zone = left_center_for_jab_r is not None and is_inside_hit_zone(left_center_for_jab_r)
+                print(f"[JAB_R FAIL] {failed} | vL={vL:.2f}/{self.V_THRESH}, angL={angL:.1f}, in_zone={in_zone}, LW[0]={LW[0]:.1f}, cooldown={(now-self.last_hit_t['R']):.2f}s")
 
         if NOSE[1] > self.calib_data["duck_line_y"]: 
              hit_events.append({"type": "DUCK", "t_hit": now})
@@ -454,15 +525,15 @@ class PoseTracker:
         left_fist_center = calc_centroid(left_keys)
         right_fist_center = calc_centroid(right_keys)
         
-        # cv2.flip 고려: 화면 왼쪽 = 실제 오른손, 화면 오른쪽 = 실제 왼손
+        # 왼쪽 펀치 타겟은 실제 왼손으로, 오른쪽 펀치 타겟은 실제 오른손으로 확인
         lw_ok = False
         rw_ok = False
         
-        if right_fist_center:  # 화면 왼쪽 펀치 타겟 -> 실제 오른손 사용
-            lw_ok = dist(right_fist_center, target_l["pos"]) < target_l["radius"]
+        if left_fist_center:  # 왼쪽 펀치 타겟 -> 실제 왼손 사용
+            lw_ok = dist(left_fist_center, target_l["pos"]) < target_l["radius"]
         
-        if left_fist_center:  # 화면 오른쪽 펀치 타겟 -> 실제 왼손 사용
-            rw_ok = dist(left_fist_center, target_r["pos"]) < target_r["radius"]
+        if right_fist_center:  # 오른쪽 펀치 타겟 -> 실제 오른손 사용
+            rw_ok = dist(right_fist_center, target_r["pos"]) < target_r["radius"]
         
         all_ok = head_ok and lw_ok and rw_ok
         

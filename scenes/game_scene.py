@@ -14,6 +14,12 @@ from scenes.base_scene import BaseScene
 from scenes.game_mode_strategy import GameModeStrategy
 from scenes.normal_mode_strategy import NormalModeStrategy
 from scenes.test_mode_strategy import TestModeStrategy
+from judgment_logic import JudgmentLogic
+from constants import (
+    DODGE_LEFT_LINE_X, DODGE_CENTER_LINE_X, DODGE_RIGHT_LINE_X,
+    DODGE_LINE_Y_TOP, DODGE_LINE_Y_BOTTOM,
+    COLOR_DODGE_LINE, SCREEN_WIDTH, SCREEN_HEIGHT
+)
 
 
 class GameScene(BaseScene):
@@ -79,6 +85,9 @@ class GameScene(BaseScene):
         self.background_sprite: Optional[arcade.Sprite] = None
         self.background_sprite_list: Optional[arcade.SpriteList] = None
         self.background_configured: bool = False
+
+        # Judgment logic for weave detection
+        self.judgment_logic: JudgmentLogic = JudgmentLogic()
 
     def on_resize(self, width: int, height: int) -> None:
         """창 크기 변경 시 배경을 다시 설정합니다."""
@@ -234,6 +243,8 @@ class GameScene(BaseScene):
         if self.mode_strategy and hit_events:
             self.mode_strategy.on_hit_events(hit_events, now)
         self._process_hit_events(game_time, hit_events, now)
+        # 위빙 판정 처리 (코 위치 기반)
+        self._process_weave_judgments(game_time, now)
         self._process_misses(game_time, now)
 
         # Update hit effect system
@@ -282,8 +293,8 @@ class GameScene(BaseScene):
             hit_color = self.mode_strategy.get_hit_zone_color(hit_color)
         arcade.draw_circle_outline(hit_zone_x, hit_zone_y, self.hit_zone_radius, hit_color, self.hit_zone_thickness)
 
-        duck_line_y = self.to_arcade_y(self.duck_line_camera)
-        arcade.draw_line(40, duck_line_y, width - 40, duck_line_y, self.duck_line_color_rgb, 3)
+        # Draw Dodge lines (위빙 판정용 수직선 3개)
+        self._draw_dodge_lines(width, height)
 
         coord_converter = self.to_arcade_xy
         color_converter = self.bgr_to_rgb
@@ -344,6 +355,54 @@ class GameScene(BaseScene):
         cx, cy = self.to_arcade_xy(pos)
         arcade.draw_circle_filled(cx, cy, radius, color)
         arcade.draw_circle_outline(cx, cy, radius + 2, arcade.color.WHITE, 2)
+
+    def _draw_dodge_lines(self, width: int, height: int) -> None:
+        """Dodge 라인(위빙 판정용 수직선)을 네온 효과와 함께 그립니다."""
+        center_x = width / 2
+        line_offset = 180 * self.x_scale  # 스케일 적용
+        
+        left_line_x = center_x - line_offset
+        center_line_x = center_x
+        right_line_x = center_x + line_offset
+        
+        # Y 좌표 변환 (상단/하단)
+        top_y = height * 0.9
+        bottom_y = height * 0.1
+        
+        # 네온 빨간색 (밝은 빨간색)
+        neon_red = (255, 0, 0)
+        neon_red_glow = (255, 100, 100)  # 글로우용 밝은 빨간색
+        line_thickness = 1  # 얇게
+        glow_thickness = 3  # 글로우 레이어
+        
+        def draw_neon_line(x: float, y1: float, y2: float, is_dashed: bool = False) -> None:
+            """네온 효과가 있는 선을 그립니다."""
+            if is_dashed:
+                # 점선: 작은 선분들을 반복
+                dash_length = 8
+                gap_length = 4
+                current_y = y1
+                while current_y < y2:
+                    # 글로우 레이어 (점선)
+                    end_y = min(current_y + dash_length, y2)
+                    arcade.draw_line(x, current_y, x, end_y, neon_red_glow, glow_thickness)
+                    # 메인 레이어 (점선)
+                    arcade.draw_line(x, current_y, x, end_y, neon_red, line_thickness)
+                    current_y += dash_length + gap_length
+            else:
+                # 실선: 글로우 레이어 먼저
+                arcade.draw_line(x, y1, x, y2, neon_red_glow, glow_thickness)
+                # 메인 레이어
+                arcade.draw_line(x, y1, x, y2, neon_red, line_thickness)
+        
+        # 왼쪽 라인 (실선, 네온 효과)
+        draw_neon_line(left_line_x, bottom_y, top_y, is_dashed=False)
+        
+        # 중앙 라인 (점선, 네온 효과)
+        draw_neon_line(center_line_x, bottom_y, top_y, is_dashed=True)
+        
+        # 오른쪽 라인 (실선, 네온 효과)
+        draw_neon_line(right_line_x, bottom_y, top_y, is_dashed=False)
 
     def _load_background(self) -> None:
         """배경 이미지를 로드합니다."""
@@ -417,7 +476,7 @@ class GameScene(BaseScene):
         self.beatmap_items.sort(key=lambda item: item.get("t", 0.0))
 
     def _parse_text_beatmap(self, text_path: str) -> List[Dict[str, Any]]:
-        mapping = {"0": None, "1": "JAB_L", "2": "JAB_R", "3": "DUCK", "4": "BOMB"}
+        mapping = {"0": None, "1": "JAB_L", "2": "JAB_R", "3": "WEAVE_L", "4": "WEAVE_R"}
         song_info = self.config_difficulty.get("song_info", {})
         bpm = float(song_info.get("bpm", 120))
         division = int(song_info.get("division", 4))
@@ -468,18 +527,76 @@ class GameScene(BaseScene):
     def _process_hit_events(self, game_time: float, hit_events: List[Dict[str, Any]], now: float) -> None:
         if not hit_events:
             return
+        
+        jab_events = [e for e in hit_events if e.get("type") in ["JAB_L", "JAB_R"]]
+        if self.test_mode and jab_events:
+            print(f"[GAME] Received {len(jab_events)} JAB events, game_time={game_time:.2f}, song_start_time={self.song_start_time}, active_notes={len(self.active_notes)}")
+        
         for event in hit_events:
+            # 이미 사용된 이벤트는 건너뛰기
+            if event.get("used", False):
+                continue
+            
             note_type = event.get("type")
             event_time = event.get("t_hit", now)
-            adjusted_time = (event_time - self.song_start_time) + self.timing_offset if self.song_start_time else 0.0
+            # hit_events의 시간(t_hit)을 게임 시간으로 변환
+            # event_time은 절대 시간이므로, song_start_time을 빼서 게임 시간으로 변환
+            # timing_offset을 더해 타이밍 보정 적용
+            if self.song_start_time:
+                adjusted_time = (event_time - self.song_start_time) + self.timing_offset
+            else:
+                adjusted_time = 0.0
+                if self.test_mode and note_type in ["JAB_L", "JAB_R"]:
+                    print(f"[GAME WARN] song_start_time is None for {note_type}, adjusted_time=0.0")
+            
+            # 노트 매칭: 이벤트 시간에 가장 가까운 미판정 노트 찾기
             candidate = self._find_best_matching_note(note_type, adjusted_time)
             if not candidate:
+                if self.test_mode and note_type in ["JAB_L", "JAB_R"]:
+                    # 디버깅: 왜 매칭 실패했는지 확인
+                    candidates_all = [n for n in self.active_notes if n.typ == note_type and not n.hit and not n.missed]
+                    print(f"[GAME] No candidate for {note_type}: adjusted_time={adjusted_time:.2f}, all_candidates={len(candidates_all)}")
+                    
+                    # active_notes의 모든 해당 타입 노트 상태 확인
+                    all_notes_of_type = [n for n in self.active_notes if n.typ == note_type]
+                    if all_notes_of_type:
+                        print(f"[GAME] All {note_type} notes in active_notes:")
+                        for n in all_notes_of_type:
+                            print(f"  - t={n.t:.2f}, hit={n.hit}, missed={n.missed}, delta_from_event={abs(n.t - adjusted_time):.2f}")
+                    
+                    # beatmap에서 다음 노트 확인
+                    future_notes = [item for item in self.beatmap_items[self.beatmap_index:] if item.get("type") == note_type]
+                    if future_notes:
+                        next_note = future_notes[0]
+                        next_note_time = next_note.get("t", 0.0)
+                        print(f"[GAME] Next {note_type} in beatmap: t={next_note_time:.2f}, spawn_time={next_note_time - self.pre_spawn_time:.2f}")
+                    
+                    if candidates_all:
+                        closest = min(candidates_all, key=lambda n: abs(n.t - adjusted_time))
+                        delta_closest = abs(closest.t - adjusted_time)
+                        max_window = max(
+                            self.judge_timing.get("perfect", 0.2),
+                            self.judge_timing.get("great", 0.35),
+                            self.judge_timing.get("good", 0.5)
+                        ) + 0.1
+                        print(f"[GAME] Closest note: t={closest.t:.2f}, delta={delta_closest:.2f}, max_window={max_window:.2f}")
                 continue
+            
+            # 판정 등급 결정
             delta = abs(adjusted_time - candidate.t)
             judgement = self._determine_judgement(delta)
             if judgement is None:
+                if self.test_mode and note_type in ["JAB_L", "JAB_R"]:
+                    print(f"[GAME] No judgement for {note_type}: delta={delta:.3f}, thresholds={self.judge_timing}")
                 continue
+            
+            # 판정 등록: 점수 및 콤보 업데이트
             self._register_hit(candidate, judgement, delta, now)
+            if self.test_mode and note_type in ["JAB_L", "JAB_R"]:
+                print(f"[GAME SUCCESS] {note_type} -> {judgement} (delta={delta:.3f}s)")
+            
+            # 이벤트 소비: 판정에 성공한 hit_event는 사용 표시하여 재사용 방지
+            event["used"] = True
 
     def _find_best_matching_note(self, note_type: Optional[str], adjusted_time: float) -> Optional[Note]:
         if note_type is None:
@@ -487,7 +604,25 @@ class GameScene(BaseScene):
         candidates = [note for note in self.active_notes if note.typ == note_type and not note.hit and not note.missed]
         if not candidates:
             return None
-        return min(candidates, key=lambda note: abs(note.t - adjusted_time))
+        
+        # 판정 창 내의 노트만 필터링 (가장 넓은 판정 창 사용)
+        max_window = max(
+            self.judge_timing.get("perfect", 0.2),
+            self.judge_timing.get("great", 0.35),
+            self.judge_timing.get("good", 0.5)
+        )
+        # 추가 여유 시간(0.1초)을 더해 더 관대하게 처리
+        max_window += 0.1
+        
+        valid_candidates = [
+            note for note in candidates 
+            if abs(note.t - adjusted_time) <= max_window
+        ]
+        
+        if not valid_candidates:
+            return None
+        
+        return min(valid_candidates, key=lambda note: abs(note.t - adjusted_time))
 
     def _determine_judgement(self, delta: float) -> Optional[str]:
         thresholds = [
@@ -532,10 +667,71 @@ class GameScene(BaseScene):
             sfx_key = judgement if judgement in self.score_values else "MISS"
             self.audio_manager.play_sfx(sfx_key)
 
+    def _process_weave_judgments(self, game_time: float, now: float) -> None:
+        """위빙 비트에 대한 판정을 처리합니다 (코 위치 기반)."""
+        if not self.pose_tracker:
+            return
+
+        # 위빙 타입 노트만 필터링
+        weave_notes = [
+            note for note in self.active_notes
+            if note.typ in ["WEAVE_L", "WEAVE_R"] and not note.hit and not note.missed
+        ]
+
+        for note in weave_notes:
+            # 시간 판정: 판정 창에 도달했는지 확인
+            time_diff = abs(game_time - note.t)
+            from constants import JUDGMENT_WINDOW
+            if time_diff > JUDGMENT_WINDOW:
+                continue  # 아직 판정 시간 아님
+
+            # JudgmentLogic을 사용하여 판정
+            judgment = self.judgment_logic.check_hit(
+                note,
+                self.pose_tracker,
+                game_time,
+                self.window.width,
+                self.window.height
+            )
+
+            if judgment == 'HIT':
+                # HIT 판정
+                delta = time_diff
+                judgement = self._determine_judgement(delta)
+                if judgement:
+                    self._register_hit(note, judgement, delta, now)
+            elif judgment == 'MISS':
+                # MISS 판정 (시간이 지났거나 위치가 맞지 않음)
+                note.missed = True
+                note.judge_result = "MISS"
+                self.last_judgement_type = "MISS"
+                self.last_judgement_time = now
+                self.judge_log.appendleft(f"MISS ({note.typ})")
+                self.combo = 0
+
+                # Spawn miss effect at note position
+                note_pos_arcade = self.to_arcade_xy((note.x, note.y))
+                miss_color_bgr = self.config_colors.get("judgement", {}).get("MISS", (255, 255, 255))
+                miss_color_rgb = self.bgr_to_rgb(tuple(miss_color_bgr))
+                self.hit_effect_system.spawn_effect(
+                    note_pos_arcade[0],
+                    note_pos_arcade[1],
+                    "MISS",
+                    miss_color_rgb,
+                    now,
+                )
+
+                if self.audio_manager:
+                    self.audio_manager.play_sfx("MISS")
+
     def _process_misses(self, game_time: float, now: float) -> None:
-        miss_window = self.judge_timing.get("good", 0.5)
+        # MISS 판정 창을 good 창보다 약간 더 크게 설정 (1.2배)
+        miss_window = self.judge_timing.get("good", 0.5) * 1.2
         for note in self.active_notes:
             if note.hit or note.missed:
+                continue
+            # 위빙 노트는 별도 처리하므로 제외
+            if note.typ in ["WEAVE_L", "WEAVE_R"]:
                 continue
             if game_time > note.t + miss_window:
                 note.missed = True

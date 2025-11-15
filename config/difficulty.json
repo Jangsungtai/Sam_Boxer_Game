@@ -1,28 +1,28 @@
 {
-  "default": "Normal",
+  "default": "Easy",
   "song_info": {
     "bpm": 30,
     "division": 4
   },
   "judge_timing_base": {
-    "perfect": 0.50,
-    "great": 0.75,
-    "good": 3.00
+    "perfect": 0.08,
+    "great": 0.18,
+    "good": 0.30
   },
   "levels": {
     "Easy": {
       "pre_spawn_time": 1.5,
-      "judge_timing_scale": 1.2,
+      "judge_timing_scale": 4.0,
       "score_multiplier": 0.8
     },
     "Normal": {
       "pre_spawn_time": 1.2,
-      "judge_timing_scale": 1.0,
+      "judge_timing_scale": 1.2,
       "score_multiplier": 1.0
     },
     "Hard": {
       "pre_spawn_time": 1.0,
-      "judge_timing_scale": 0.9,
+      "judge_timing_scale": 1.0,
       "score_multiplier": 1.2
     }
   }

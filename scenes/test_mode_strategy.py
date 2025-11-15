@@ -89,6 +89,89 @@ class TestModeStrategy(GameModeStrategy):
                 arcade.color.LIGHT_GRAY,
                 font_size=12,
             )
+        
+        # 판정 디버깅 정보
+        debug_start_x = game_scene.window.width - 300
+        debug_start_y = game_scene.window.height - 100
+        debug_line_height = 18
+        
+        arcade.draw_text(
+            "Judgment Debug",
+            debug_start_x,
+            debug_start_y,
+            arcade.color.CYAN,
+            font_size=14,
+            bold=True,
+        )
+        
+        # 판정 창 정보
+        judge_timing = game_scene.judge_timing
+        arcade.draw_text(
+            f"Perfect: ±{judge_timing.get('perfect', 0.2):.2f}s",
+            debug_start_x,
+            debug_start_y - debug_line_height * 1,
+            arcade.color.GOLD,
+            font_size=12,
+        )
+        arcade.draw_text(
+            f"Great: ±{judge_timing.get('great', 0.35):.2f}s",
+            debug_start_x,
+            debug_start_y - debug_line_height * 2,
+            arcade.color.ORANGE,
+            font_size=12,
+        )
+        arcade.draw_text(
+            f"Good: ±{judge_timing.get('good', 0.5):.2f}s",
+            debug_start_x,
+            debug_start_y - debug_line_height * 3,
+            arcade.color.YELLOW,
+            font_size=12,
+        )
+        
+        # 활성 노트 정보
+        active_jab_notes = [n for n in game_scene.active_notes if n.typ in ["JAB_L", "JAB_R"] and not n.hit and not n.missed]
+        if game_scene.song_start_time:
+            game_time = now - game_scene.song_start_time
+            arcade.draw_text(
+                f"Game Time: {game_time:.2f}s",
+                debug_start_x,
+                debug_start_y - debug_line_height * 5,
+                arcade.color.WHITE,
+                font_size=12,
+            )
+            arcade.draw_text(
+                f"Active JAB Notes: {len(active_jab_notes)}",
+                debug_start_x,
+                debug_start_y - debug_line_height * 6,
+                arcade.color.WHITE,
+                font_size=12,
+            )
+            
+            # 가장 가까운 노트 정보 표시
+            if active_jab_notes:
+                closest_note = min(active_jab_notes, key=lambda n: abs(n.t - game_time))
+                time_diff = closest_note.t - game_time
+                arcade.draw_text(
+                    f"Closest: {closest_note.typ}",
+                    debug_start_x,
+                    debug_start_y - debug_line_height * 7,
+                    arcade.color.LIGHT_GREEN,
+                    font_size=11,
+                )
+                arcade.draw_text(
+                    f"  Note t: {closest_note.t:.2f}s",
+                    debug_start_x,
+                    debug_start_y - debug_line_height * 8,
+                    arcade.color.LIGHT_GRAY,
+                    font_size=11,
+                )
+                arcade.draw_text(
+                    f"  Δ: {time_diff:+.3f}s",
+                    debug_start_x,
+                    debug_start_y - debug_line_height * 9,
+                    arcade.color.LIGHT_GREEN if abs(time_diff) <= judge_timing.get('good', 0.5) else arcade.color.RED,
+                    font_size=11,
+                )
 
     def on_hit_events(self, hit_events, now: float) -> None:
         self.handle_hits(hit_events, t_game=0.0, now=now)
