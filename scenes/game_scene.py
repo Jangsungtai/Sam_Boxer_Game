@@ -37,12 +37,12 @@ class GameScene(BaseScene):
 
     def __init__(self, window: arcade.Window, audio_manager, config: Dict[str, Any], pose_tracker) -> None:
         super().__init__(window, audio_manager, config, pose_tracker)
-
+        
         self.config_rules = config.get("rules", {})
         self.config_ui = config.get("ui", {})
         self.config_colors = self.config_ui.get("colors", {})
         self.config_difficulty = config.get("difficulty", {})
-
+        
         # Game state
         self.game_state = GameState()
         
@@ -84,7 +84,7 @@ class GameScene(BaseScene):
         self.background_sprite: Optional[arcade.Sprite] = None
         self.background_sprite_list: Optional[arcade.SpriteList] = None
         self.background_configured: bool = False
-
+        
         # Pose tracking
         self.last_nose_pos: Optional[Tuple[float, float]] = None
         self.last_left_fist: Optional[Tuple[float, float]] = None
@@ -133,11 +133,11 @@ class GameScene(BaseScene):
         
         # Initialize components
         self._initialize_components()
-        
+            
         # Initialize game
         self.beatmap_index = 0
-        self._update_strategy()
-        
+            self._update_strategy()
+            
         if self.pose_tracker:
             self.pose_tracker.set_test_mode(self.game_state.test_mode)
         
@@ -190,7 +190,7 @@ class GameScene(BaseScene):
             "test_mode": self.game_state.test_mode,
         })
         return super().cleanup()
-
+    
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         if symbol == arcade.key.T:
             self._toggle_test_mode()
@@ -489,7 +489,7 @@ class GameScene(BaseScene):
             item = self.beatmap_items[self.beatmap_index]
             spawn_time = item.get("t", 0.0) - self.pre_spawn_time
             if game_time < spawn_time:
-                break
+                    break
             
             self.note_manager.spawn_note(
                 item,
