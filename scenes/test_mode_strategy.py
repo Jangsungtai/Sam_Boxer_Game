@@ -15,12 +15,17 @@ class TestModeStrategy(GameModeStrategy):
         super().__init__(game_scene)
         self.event_history: list[tuple[str, float]] = []
         self.max_history = 20
+        self.last_judge_log_size = 0  # 판정 로그 크기 추적
 
     def handle_hits(self, hit_events, t_game, now, **kwargs) -> None:
-        for ev in hit_events:
-            self.event_history.append((ev.get("type", "UNKNOWN"), now))
-        if len(self.event_history) > self.max_history:
-            self.event_history = self.event_history[-self.max_history :]
+        """히트 이벤트를 받아서 이벤트 히스토리에 추가합니다."""
+        if hit_events:
+            for ev in hit_events:
+                event_type = ev.get("type", "UNKNOWN")
+                self.event_history.append((event_type, now))
+            # 최대 개수 제한
+            if len(self.event_history) > self.max_history:
+                self.event_history = self.event_history[-self.max_history :]
 
     def _draw_mode_specific_hud(self) -> None:
         width = self.game_scene.window.width
@@ -28,11 +33,11 @@ class TestModeStrategy(GameModeStrategy):
         arcade.draw_text(
             "Test Mode",
             width / 2,
-            height / 2,
+            height - 10,  # 최상단으로 이동
             arcade.color.YELLOW,
             font_size=48,
             anchor_x="center",
-            anchor_y="center",
+            anchor_y="top",
             bold=True,
         )
 
@@ -66,251 +71,325 @@ class TestModeStrategy(GameModeStrategy):
         if left_screen:
             arcade.draw_line(*left_screen, *hit_center, arcade.color.SALMON, 1)
 
-        # 판정 로그 (히트존 아래, 왼쪽 정렬)
-        log_start_x = 40
-        log_start_y = hit_center[1] - game_scene.hit_zone_radius * 1.5 - 20
-        log_line_height = 18
+        # 오른쪽 판정창 전체 설정 (박스 오른쪽을 화면 오른쪽과 얼라인)
+        panel_box_width = 300  # 박스 너비 약간 감소
+        panel_right_padding = 10  # 화면 오른쪽에서 10픽셀 여백
+        panel_start_x = width - panel_box_width - panel_right_padding  # 왼쪽으로 이동
+        panel_start_y = height - 60
+        debug_line_height = 18
+        
+        # ===== 1. 판정 창 정보 (현재 노트) - 맨 위 =====
+        debug_info_start_y = panel_start_y
+        debug_box_height = 340  # 박스 높이 증가 (글자 겹침 방지)
         
         # 배경 박스
-        log_box_width = 280
-        log_box_height = min(len(game_scene.game_state.judge_log) * log_line_height + 30, 200)
-        log_box_center_x = log_start_x + log_box_width / 2
-        log_box_center_y = log_start_y - log_box_height / 2
-        log_box_points = [
-            (log_box_center_x - log_box_width / 2, log_box_center_y - log_box_height / 2),
-            (log_box_center_x + log_box_width / 2, log_box_center_y - log_box_height / 2),
-            (log_box_center_x + log_box_width / 2, log_box_center_y + log_box_height / 2),
-            (log_box_center_x - log_box_width / 2, log_box_center_y + log_box_height / 2),
-        ]
-        arcade.draw_polygon_filled(log_box_points, (0, 0, 0))
-        
-        arcade.draw_text(
-            "판정 로그 (Judgment Log)",
-            log_start_x + 10,
-            log_start_y + 5,
-            arcade.color.CYAN,
-            font_size=14,
-            bold=True,
-        )
-        
-        # judge_log는 deque이므로 list로 변환 (이미 maxlen=10으로 제한됨)
-        judge_log_list = list(game_scene.game_state.judge_log)
-        for idx, entry in enumerate(judge_log_list):
-            arcade.draw_text(
-                entry,
-                log_start_x + 10,
-                log_start_y - 15 - idx * log_line_height,
-                arcade.color.LIGHT_GREEN,
-                font_size=13,
-            )
-
-        # 이벤트 히스토리 (왼쪽 하단)
-        event_start_x = 40
-        event_start_y = 180
-        event_line_height = 20
-        
-        # 배경 박스
-        event_box_width = 250
-        event_box_height = 120
-        event_box_center_x = event_start_x + event_box_width / 2
-        event_box_center_y = event_start_y + event_box_height / 2 - 20
-        event_box_points = [
-            (event_box_center_x - event_box_width / 2, event_box_center_y - event_box_height / 2),
-            (event_box_center_x + event_box_width / 2, event_box_center_y - event_box_height / 2),
-            (event_box_center_x + event_box_width / 2, event_box_center_y + event_box_height / 2),
-            (event_box_center_x - event_box_width / 2, event_box_center_y + event_box_height / 2),
-        ]
-        arcade.draw_polygon_filled(event_box_points, (0, 0, 0))
-        
-        arcade.draw_text(
-            "최근 이벤트 (Recent Events)",
-            event_start_x + 10,
-            event_start_y + event_line_height * 2 + 5,
-            arcade.color.LIGHT_YELLOW,
-            font_size=14,
-            bold=True,
-        )
-
-        for idx, (ev_type, ts) in enumerate(reversed(self.event_history[-5:])):
-            age = now - ts
-            arcade.draw_text(
-                f"• {ev_type} ({age:0.1f}s 전)",
-                event_start_x + 10,
-                event_start_y + idx * event_line_height,
-                arcade.color.LIGHT_GRAY,
-                font_size=13,
-            )
-        
-        # 판정 디버깅 정보 (오른쪽 상단)
-        debug_start_x = width - 320
-        debug_start_y = height - 80
-        debug_line_height = 20
-        
-        # 배경 박스
-        debug_box_width = 300
-        debug_box_height = 300
-        debug_box_center_x = debug_start_x + debug_box_width / 2
-        debug_box_center_y = debug_start_y - debug_box_height / 2 + 40
+        debug_box_center_x = panel_start_x + panel_box_width / 2
+        debug_box_center_y = debug_info_start_y - debug_box_height / 2
         debug_box_points = [
-            (debug_box_center_x - debug_box_width / 2, debug_box_center_y - debug_box_height / 2),
-            (debug_box_center_x + debug_box_width / 2, debug_box_center_y - debug_box_height / 2),
-            (debug_box_center_x + debug_box_width / 2, debug_box_center_y + debug_box_height / 2),
-            (debug_box_center_x - debug_box_width / 2, debug_box_center_y + debug_box_height / 2),
+            (debug_box_center_x - panel_box_width / 2, debug_box_center_y - debug_box_height / 2),
+            (debug_box_center_x + panel_box_width / 2, debug_box_center_y - debug_box_height / 2),
+            (debug_box_center_x + panel_box_width / 2, debug_box_center_y + debug_box_height / 2),
+            (debug_box_center_x - panel_box_width / 2, debug_box_center_y + debug_box_height / 2),
         ]
-        arcade.draw_polygon_filled(debug_box_points, (0, 0, 0))
+        arcade.draw_polygon_filled(debug_box_points, (0, 0, 0, 180))
         
+        # 헤더 (한글과 영문 분리 - 영문은 별도 줄, 박스 안쪽 상단)
+        header_y = debug_info_start_y - 40  # 20픽셀 아래로 이동
         arcade.draw_text(
-            "판정 창 정보 (Judgment Windows)",
-            debug_start_x + 10,
-            debug_start_y + 5,
+            "판정 창 정보",
+            panel_start_x + 10,
+            header_y,
             arcade.color.CYAN,
             font_size=15,
             bold=True,
         )
+        # 영문 부분 (다음 줄에 표시, 폰트 크기 줄임)
+        arcade.draw_text(
+            "(Judgment Windows)",
+            panel_start_x + 10,
+            header_y - 22,  # 한글 아래 줄 (간격 증가로 겹침 방지)
+            arcade.color.CYAN,
+            font_size=11,  # 15에서 4 줄임
+            bold=False,
+        )
         
         # 판정 창 정보
         judge_timing = game_scene.judge_timing
-        y_offset = 1
+        # 헤더 영문이 debug_info_start_y - 62이므로, 그 아래 여유 공간을 확보하여 더 아래로
+        current_y = debug_info_start_y - 85  # 헤더(한글+영문 2줄)와 간격 조정, 겹침 방지
+        
+        # 판정 창 시간
         arcade.draw_text(
             "PERFECT:",
-            debug_start_x + 10,
-            debug_start_y - debug_line_height * y_offset,
+            panel_start_x + 10,
+            current_y,
             arcade.color.WHITE,
             font_size=13,
         )
         arcade.draw_text(
             f"±{judge_timing.get('perfect', 0.2):.2f}s",
-            debug_start_x + 100,
-            debug_start_y - debug_line_height * y_offset,
+            panel_start_x + 100,
+            current_y,
             arcade.color.GOLD,
             font_size=13,
         )
+        current_y -= debug_line_height
         
-        y_offset = 2
         arcade.draw_text(
             "GREAT:",
-            debug_start_x + 10,
-            debug_start_y - debug_line_height * y_offset,
+            panel_start_x + 10,
+            current_y,
             arcade.color.WHITE,
             font_size=13,
         )
         arcade.draw_text(
             f"±{judge_timing.get('great', 0.35):.2f}s",
-            debug_start_x + 100,
-            debug_start_y - debug_line_height * y_offset,
+            panel_start_x + 100,
+            current_y,
             arcade.color.ORANGE,
             font_size=13,
         )
+        current_y -= debug_line_height
         
-        y_offset = 3
         arcade.draw_text(
             "GOOD:",
-            debug_start_x + 10,
-            debug_start_y - debug_line_height * y_offset,
+            panel_start_x + 10,
+            current_y,
             arcade.color.WHITE,
             font_size=13,
         )
         arcade.draw_text(
             f"±{judge_timing.get('good', 0.5):.2f}s",
-            debug_start_x + 100,
-            debug_start_y - debug_line_height * y_offset,
+            panel_start_x + 100,
+            current_y,
             arcade.color.YELLOW,
             font_size=13,
         )
+        current_y -= debug_line_height * 1.5
         
         # 구분선
         arcade.draw_line(
-            debug_start_x + 10,
-            debug_start_y - debug_line_height * 3.5,
-            debug_start_x + debug_box_width - 10,
-            debug_start_y - debug_line_height * 3.5,
+            panel_start_x + 10,
+            current_y,
+            panel_start_x + panel_box_width - 10,
+            current_y,
             arcade.color.GRAY,
             1
         )
+        current_y -= debug_line_height * 0.5
         
-        # 활성 노트 정보
+        # 현재 노트 정보
         active_notes = game_scene.note_manager.get_active_notes() if game_scene.note_manager else []
-        active_jab_notes = [n for n in active_notes if n.typ in ["JAB_L", "JAB_R"] and not n.hit and not n.missed]
+        active_jab_notes = [n for n in active_notes if n.typ in ["JAB_L", "JAB_R", "WEAVE_L", "WEAVE_R"] and not n.hit and not n.missed]
+        
         if game_scene.game_state.song_start_time:
             game_time = now - game_scene.game_state.song_start_time
-            y_offset = 5
+            
             arcade.draw_text(
-                "게임 시간 (Game Time):",
-                debug_start_x + 10,
-                debug_start_y - debug_line_height * y_offset,
+                "게임 시간:",
+                panel_start_x + 10,
+                current_y,
                 arcade.color.WHITE,
-                font_size=13,
+                font_size=12,
             )
             arcade.draw_text(
                 f"{game_time:.2f}s",
-                debug_start_x + 200,
-                debug_start_y - debug_line_height * y_offset,
+                panel_start_x + 120,
+                current_y,
                 arcade.color.LIGHT_BLUE,
-                font_size=13,
+                font_size=12,
             )
+            current_y -= debug_line_height
             
-            y_offset = 6
             arcade.draw_text(
-                "활성 JAB 노트 (Active JAB):",
-                debug_start_x + 10,
-                debug_start_y - debug_line_height * y_offset,
+                "활성 노트:",
+                panel_start_x + 10,
+                current_y,
                 arcade.color.WHITE,
-                font_size=13,
+                font_size=12,
             )
             arcade.draw_text(
                 f"{len(active_jab_notes)}개",
-                debug_start_x + 200,
-                debug_start_y - debug_line_height * y_offset,
+                panel_start_x + 120,
+                current_y,
                 arcade.color.LIGHT_BLUE,
-                font_size=13,
+                font_size=12,
             )
+            current_y -= debug_line_height * 2  # 간격 증가 (글자 겹침 방지)
             
-            # 가장 가까운 노트 정보 표시
+            # 가장 가까운 노트 (현재 노트)
             if active_jab_notes:
                 closest_note = min(active_jab_notes, key=lambda n: abs(n.t - game_time))
                 time_diff = closest_note.t - game_time
                 
-                y_offset = 8
+                # 현재 노트 헤더 (한글과 영문 분리 - 영문은 별도 줄)
                 arcade.draw_text(
-                    "가장 가까운 노트 (Closest Note):",
-                    debug_start_x + 10,
-                    debug_start_y - debug_line_height * y_offset,
-                    arcade.color.WHITE,
+                    "현재 노트",
+                    panel_start_x + 10,
+                    current_y,
+                    arcade.color.LIGHT_YELLOW,
                     font_size=13,
+                    bold=True,
                 )
+                # 영문 부분 (다음 줄에 표시, 폰트 크기 줄임)
+                arcade.draw_text(
+                    "(Current Note)",
+                    panel_start_x + 10,
+                    current_y - 18,  # 한글 아래 줄 (간격 증가로 겹침 방지)
+                    arcade.color.LIGHT_YELLOW,
+                    font_size=9,  # 13에서 4 줄임
+                    bold=False,
+                )
+                current_y -= debug_line_height * 2.5  # 영문 줄 포함해서 간격 증가 (글자 겹침 방지)
                 
-                y_offset = 9
                 arcade.draw_text(
                     f"타입: {closest_note.typ}",
-                    debug_start_x + 20,
-                    debug_start_y - debug_line_height * y_offset,
+                    panel_start_x + 20,
+                    current_y,
                     arcade.color.LIGHT_GREEN,
                     font_size=12,
                 )
+                current_y -= debug_line_height
                 
-                y_offset = 10
                 arcade.draw_text(
-                    f"노트 시간: {closest_note.t:.2f}s",
-                    debug_start_x + 20,
-                    debug_start_y - debug_line_height * y_offset,
+                    f"시간: {closest_note.t:.2f}s",
+                    panel_start_x + 20,
+                    current_y,
                     arcade.color.LIGHT_GRAY,
                     font_size=12,
                 )
+                current_y -= debug_line_height
                 
-                y_offset = 11
                 arcade.draw_text(
-                    f"시간 차이 (Δ): {time_diff:+.3f}s",
-                    debug_start_x + 20,
-                    debug_start_y - debug_line_height * y_offset,
+                    f"차이: {time_diff:+.3f}s",
+                    panel_start_x + 20,
+                    current_y,
                     arcade.color.LIGHT_GREEN if abs(time_diff) <= judge_timing.get('good', 0.5) else arcade.color.RED,
                     font_size=12,
                 )
         
-        # 스켈레톤 표시 (오른쪽 하단)
+        # ===== 2. 판정 로그 - 중간 =====
+        log_start_y = debug_info_start_y - debug_box_height - 20  # 간격 증가 (글자 겹침 방지)
+        log_line_height = 16
+        log_box_height = 10 * log_line_height + 80  # 박스 높이 증가 (헤더 및 내용 공간 확보)
+        
+        # 배경 박스
+        log_box_center_x = panel_start_x + panel_box_width / 2
+        log_box_center_y = log_start_y - log_box_height / 2
+        log_box_points = [
+            (log_box_center_x - panel_box_width / 2, log_box_center_y - log_box_height / 2),
+            (log_box_center_x + panel_box_width / 2, log_box_center_y - log_box_height / 2),
+            (log_box_center_x + panel_box_width / 2, log_box_center_y + log_box_height / 2),
+            (log_box_center_x - panel_box_width / 2, log_box_center_y + log_box_height / 2),
+        ]
+        arcade.draw_polygon_filled(log_box_points, (0, 0, 0, 180))
+        
+        # 헤더 (한글과 영문 분리 - 영문은 별도 줄, 박스 안쪽 상단)
+        log_header_y = log_start_y - 30  # 20픽셀 아래로 이동
+        arcade.draw_text(
+            "판정 로그",
+            panel_start_x + 10,
+            log_header_y,
+            arcade.color.CYAN,
+            font_size=14,
+            bold=True,
+        )
+        # 영문 부분 (다음 줄에 표시, 폰트 크기 줄임)
+        arcade.draw_text(
+            "(Judgment Log)",
+            panel_start_x + 10,
+            log_header_y - 20,  # 한글 아래 줄 (간격 증가로 겹침 방지)
+            arcade.color.CYAN,
+            font_size=10,  # 14에서 4 줄임
+            bold=False,
+        )
+        
+        # 판정 로그 변경 사항을 이벤트 히스토리에 추가 (WEAVE_L, WEAVE_R 등 판정 결과 포함)
+        current_judge_log_size = len(game_scene.game_state.judge_log)
+        if current_judge_log_size > self.last_judge_log_size:
+            # 새로운 판정이 추가됨
+            judge_log_list = list(game_scene.game_state.judge_log)
+            new_entries = judge_log_list[self.last_judge_log_size:]
+            for entry in new_entries:
+                # 판정 로그 형식: "PERFECT (JAB_L) Δ=0.106" 또는 "MISS (WEAVE_R) Δ=0.000"
+                # 이벤트 히스토리에 추가 (간단한 형식으로)
+                if "(" in entry and ")" in entry:
+                    try:
+                        event_type = entry.split("(")[1].split(")")[0]
+                        self.event_history.append((event_type, now))
+                    except (IndexError, ValueError):
+                        # 파싱 실패 시 전체 항목 추가
+                        self.event_history.append((entry.split()[0] if entry.split() else "UNKNOWN", now))
+            self.last_judge_log_size = current_judge_log_size
+            # 최대 개수 제한
+            if len(self.event_history) > self.max_history:
+                self.event_history = self.event_history[-self.max_history :]
+        
+        # judge_log는 deque이므로 list로 변환
+        judge_log_list = list(game_scene.game_state.judge_log)
+        # 헤더 영문이 log_start_y - 50이므로, 그 아래 여유 공간을 확보하여 더 아래로
+        for idx, entry in enumerate(judge_log_list):
+            arcade.draw_text(
+                entry,
+                panel_start_x + 10,
+                log_start_y - 80 - idx * log_line_height,  # 헤더(한글+영문 2줄)와 간격 조정, 겹침 방지
+                arcade.color.LIGHT_GREEN,
+                font_size=12,
+            )
+
+        # ===== 3. 최근 이벤트 기록 - 아래 =====
+        event_start_y = log_start_y - log_box_height - 20  # 간격 증가 (글자 겹침 방지)
+        event_line_height = 18
+        event_box_height = 190  # 박스 높이 증가 (헤더 및 내용 공간 확보)
+        
+        # 배경 박스
+        event_box_center_x = panel_start_x + panel_box_width / 2
+        event_box_center_y = event_start_y - event_box_height / 2
+        event_box_points = [
+            (event_box_center_x - panel_box_width / 2, event_box_center_y - event_box_height / 2),
+            (event_box_center_x + panel_box_width / 2, event_box_center_y - event_box_height / 2),
+            (event_box_center_x + panel_box_width / 2, event_box_center_y + event_box_height / 2),
+            (event_box_center_x - panel_box_width / 2, event_box_center_y + event_box_height / 2),
+        ]
+        arcade.draw_polygon_filled(event_box_points, (0, 0, 0, 180))
+        
+        # 헤더 (한글과 영문 분리 - 영문은 별도 줄, 박스 안쪽 상단)
+        event_header_y = event_start_y - 30  # 20픽셀 아래로 이동
+        arcade.draw_text(
+            "최근 이벤트",
+            panel_start_x + 10,
+            event_header_y,
+            arcade.color.LIGHT_YELLOW,
+            font_size=14,
+            bold=True,
+        )
+        # 영문 부분 (다음 줄에 표시, 폰트 크기 줄임)
+        arcade.draw_text(
+            "(Recent Events)",
+            panel_start_x + 10,
+            event_header_y - 20,  # 한글 아래 줄 (간격 증가로 겹침 방지)
+            arcade.color.LIGHT_YELLOW,
+            font_size=10,  # 14에서 4 줄임
+            bold=False,
+        )
+
+        # 최근 이벤트 표시 (최대 6개)
+        # 헤더 영문이 event_start_y - 50이므로, 그 아래 여유 공간을 확보하여 더 아래로
+        for idx, (ev_type, ts) in enumerate(reversed(self.event_history[-6:])):
+            age = now - ts
+            arcade.draw_text(
+                f"• {ev_type} ({age:0.1f}s 전)",
+                panel_start_x + 10,
+                event_start_y - 80 - idx * event_line_height,  # 헤더(한글+영문 2줄)와 간격 조정, 겹침 방지
+                arcade.color.LIGHT_GRAY,
+                font_size=12,
+            )
+        
+        # 스켈레톤 표시 (중앙)
         self._draw_skeleton(width, height, game_scene)
 
     def _draw_skeleton(self, width: int, height: int, game_scene) -> None:
-        """오른쪽 하단에 스켈레톤을 그립니다."""
+        """중앙에 스켈레톤을 그립니다."""
         if not game_scene.pose_tracker:
             return
         
@@ -321,20 +400,20 @@ class TestModeStrategy(GameModeStrategy):
         if not landmarks or not landmarks.landmark:
             return
         
-        # 스켈레톤 박스 설정
-        skeleton_box_width = 200
+        # 스켈레톤 박스 설정 (중앙)
+        skeleton_box_width = 245
         skeleton_box_height = 300
-        skeleton_box_x = width - skeleton_box_width - 20
-        skeleton_box_y = skeleton_box_height + 20
+        skeleton_box_x = (width - skeleton_box_width) / 2
+        skeleton_box_y = (height + skeleton_box_height) / 2 - 200
         
-        # 파란색 배경 박스
+        # # 반 투명 검은색
         box_points = [
             (skeleton_box_x, skeleton_box_y - skeleton_box_height),
             (skeleton_box_x + skeleton_box_width, skeleton_box_y - skeleton_box_height),
             (skeleton_box_x + skeleton_box_width, skeleton_box_y),
             (skeleton_box_x, skeleton_box_y),
         ]
-        arcade.draw_polygon_filled(box_points, (50, 100, 200))  # 파란색 배경
+        arcade.draw_polygon_filled(box_points, (0, 0, 0, 180))  # 반 투명 검은색
         
         # 랜드마크 추출
         lm = landmarks.landmark
@@ -405,6 +484,15 @@ class TestModeStrategy(GameModeStrategy):
                 arcade.draw_circle_filled(x, y, 2, point_color)
 
     def on_hit_events(self, hit_events, now: float) -> None:
+        """히트 이벤트를 받아서 처리합니다."""
         self.handle_hits(hit_events, t_game=0.0, now=now)
+    
+    def record_judgment_event(self, note_type: str, judgement: str, now: float) -> None:
+        """판정 결과를 이벤트 히스토리에 추가합니다. (WEAVE_L, WEAVE_R 등 판정 결과 포함)"""
+        # 판정 결과를 이벤트 히스토리에 추가
+        self.event_history.append((f"{judgement} ({note_type})", now))
+        # 최대 개수 제한
+        if len(self.event_history) > self.max_history:
+            self.event_history = self.event_history[-self.max_history :]
 
 

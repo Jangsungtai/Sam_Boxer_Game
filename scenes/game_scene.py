@@ -178,7 +178,9 @@ class GameScene(BaseScene):
             self.bgr_to_rgb,
             self.config_colors,
             self.hit_zone_camera,
-            self.game_state.test_mode
+            self.game_state.test_mode,
+            self.x_scale,
+            self.y_scale
         )
 
     def cleanup(self) -> Dict[str, Any]:
@@ -282,6 +284,11 @@ class GameScene(BaseScene):
                 self.timing_offset,
                 now
             )
+            # 창 크기가 변경되었을 수 있으므로 스케일 업데이트
+            if self.judgment_processor:
+                self.judgment_processor.x_scale = self.x_scale
+                self.judgment_processor.y_scale = self.y_scale
+            
             self.judgment_processor.process_weave_judgments(game_time, active_notes, now)
             self.judgment_processor.process_misses(game_time, active_notes, now)
         

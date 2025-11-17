@@ -85,7 +85,7 @@ class GameWindow(arcade.Window):
 
         if hasattr(scene, "set_source_dimensions"):
             scene.set_source_dimensions(self.source_width, self.source_height)  # type: ignore[attr-defined]
-
+ 
         if hasattr(scene, "startup"):
             scene.startup(persistent_data)  # type: ignore[attr-defined]
 
