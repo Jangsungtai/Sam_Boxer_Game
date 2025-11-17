@@ -1,11 +1,16 @@
 # Beat Boxer (v1.0)
 
-`MediaPipe Pose Estimation`을 활용한 실시간 모션 인식 권투 리듬 게임입니다.
-OpenCV로 카메라 영상을 받아 실시간으로 사용자의 펀치(Jab) 및 회피(Weave) 동작을 감지하고, 음악 비트에 맞춰 날아오는 노트를 처리하는 게임입니다.
+Beat Boxer는 권투의 기술을 정확히 습득하고 타이밍 및 포즈를 유지하는 것에 중점을 둔 실시간 모션 인식 기반의 권투 리듬 게임입니다.
+특히 어린이 사용자의 경우, 잘못된 자세가 습관이 되기 쉽기 때문에 정확한 포즈를 유지하는 것이 근육 발달과 부상 방지에 매우 중요합니다. 권투 포즈(가드 자세)는 코어 근육을 활용하고 균형 감각을 키우는 기초입니다. 본 게임은 사용자의 실제 신체 동작(정확한 펀치 궤적, 안정적인 회피 자세)을 카메라를 통해 실시간으로 감지하고 피드백을 제공합니다. 또한 플레이어의 행동 패턴을 분석하고 개인화된 교정을 제안하는 시스템입니다.
+
 
 ## 테스트 모드 영상 
 
-<img src="assets/Boxing test mode.gif" alt="Test Mode Demo" width="100%">
+<img src="boxing-game.gif" alt="Test Mode Demo" width="100%">
+
+
+## 게임 디자인 
+<img src="assets/Architecture_design.png" alt="Design" width="100%">
 
 
 ## 🕹️ 주요 기능

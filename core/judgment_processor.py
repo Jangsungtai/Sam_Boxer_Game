@@ -27,7 +27,9 @@ class JudgmentProcessor:
         color_converter,
         config_colors: Dict,
         hit_zone_camera: Tuple[int, int],
-        test_mode: bool = False
+        test_mode: bool = False,
+        x_scale: float = 1.0,
+        y_scale: float = 1.0
     ):
         self.judge_timing = judge_timing
         self.score_manager = score_manager
@@ -41,6 +43,8 @@ class JudgmentProcessor:
         self.config_colors = config_colors
         self.hit_zone_camera = hit_zone_camera
         self.test_mode = test_mode
+        self.x_scale = x_scale
+        self.y_scale = y_scale
         
         self.judgment_logic = JudgmentLogic()
     
@@ -149,7 +153,8 @@ class JudgmentProcessor:
                 self.pose_tracker,
                 game_time,
                 self.window_width,
-                self.window_height
+                self.window_height,
+                self.x_scale
             )
             
             if judgment == 'HIT':
