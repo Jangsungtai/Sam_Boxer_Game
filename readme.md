@@ -6,7 +6,7 @@ Beat Boxer는 권투의 기술을 정확히 습득하고 타이밍 및 포즈를
 
 ## 테스트 모드 영상 
 
-<img src="boxing-game.gif" alt="Test Mode Demo" width="100%">
+<img src="assets/boxing-game.gif" alt="Test Mode Demo" width="100%">
 
 
 ## 게임 디자인 
