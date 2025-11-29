@@ -1,4 +1,4 @@
-# Beat Boxer (v1.0)
+# Beat Boxer (v1.1)
 
 Beat Boxer는 권투의 기술을 정확히 습득하고 타이밍 및 포즈를 유지하는 것에 중점을 둔 실시간 모션 인식 기반의 권투 리듬 게임입니다.
 특히 어린이 사용자의 경우, 잘못된 자세가 습관이 되기 쉽기 때문에 정확한 포즈를 유지하는 것이 근육 발달과 부상 방지에 매우 중요합니다. 권투 포즈(가드 자세)는 코어 근육을 활용하고 균형 감각을 키우는 기초입니다. 본 게임은 사용자의 실제 신체 동작(정확한 펀치 궤적, 안정적인 회피 자세)을 카메라를 통해 실시간으로 감지하고 피드백을 제공합니다. 또한 플레이어의 행동 패턴을 분석하고 개인화된 교정을 제안하는 시스템입니다.
@@ -6,7 +6,11 @@ Beat Boxer는 권투의 기술을 정확히 습득하고 타이밍 및 포즈를
 
 ## 테스트 모드 영상 
 
-<img src="boxing-game.gif" alt="Test Mode Demo" width="100%">
+<img src="assets/boxing-game.gif" alt="Test Mode Demo" width="100%">
+
+## 데이터 획득 영상
+
+<img src="assets/data_mining.gif" alt="Data mining" width="100%">
 
 
 ## 게임 디자인 
@@ -25,6 +29,10 @@ Beat Boxer는 권투의 기술을 정확히 습득하고 타이밍 및 포즈를
 * **전략 패턴:** 일반 모드와 테스트 모드를 Strategy 패턴으로 분리
 * **설정 분리:** 게임 밸런스(`rules.json`), 난이도(`difficulty.json`), UI(`ui.json`)를 외부 파일로 분리
 * **모듈화된 아키텍처:** 책임 분리된 컴포넌트 구조 (NoteManager, JudgmentProcessor, ScoreManager 등)
+* **플레이어 행동 분석:** 게임 중 포즈 데이터 수집 및 저장 (CSV 형식)
+* **데이터 마이닝 파이프라인:** 3단계 데이터 분석 시스템 (기준 정의, 평가항목 정의, 품질 평가)
+* **포즈 품질 평가:** 가중 유클리드 거리 기반 포즈 품질 점수 계산 (0-100점)
+* **개인화된 교정 제안:** 데이터 분석 기반 맞춤형 포즈 교정 방안 제시
 
 ## 💻 사용된 기술 스택
 
@@ -34,6 +42,9 @@ Beat Boxer는 권투의 기술을 정확히 습득하고 타이밍 및 포즈를
 * **MediaPipe:** 실시간 포즈 인식 및 세그멘테이션
 * **Pygame:** 오디오 재생
 * **NumPy:** 수치 계산 및 좌표 변환
+* **Pandas:** 데이터 분석 및 처리
+* **Scikit-learn:** 머신러닝 (K-Means Clustering, Random Forest)
+* **Matplotlib:** 데이터 시각화 (레이더 차트, 히트맵, 박스플롯)
 
 ---
 
@@ -115,6 +126,29 @@ beat_boxer_game/
 │   ├── result_scene.py              # 결과 화면 씬
 │   └── test_mode_strategy.py        # 테스트 모드 전략 구현
 │
+├── scripts/                         # 데이터 분석 스크립트
+│   ├── step1_define_pose_centroid.py      # 1단계: 고급자세 기준 정의
+│   ├── step2_define_evaluation_items.py   # 2단계: 평가항목 정의
+│   ├── step3_evaluate_pose_quality.py     # 3단계: 포즈품질 습관 평가
+│   └── compare_guard_position.py          # 가드 포지션 비교 분석
+│
+├── docs/                            # 문서
+│   ├── pose_data_mining_plan.md     # 데이터 마이닝 계획
+│   ├── pose_data_mining_1.md        # 1단계 분석 결과
+│   ├── pose_data_mining_2.md        # 2단계 분석 결과
+│   ├── pose_data_mining_3.md        # 3단계 분석 결과
+│   └── pose_data_mining_result.md   # 종합 분석 및 교정 제안
+│
+├── data/                            # 데이터 파일
+│   ├── pose_data/                   # 수집된 포즈 데이터 (CSV)
+│   ├── pose_standards.json          # 상급자 기준 포즈 벡터
+│   └── pose_evaluation_weights.json # 변수 중요도 가중치
+│
+├── reports/                         # 분석 리포트
+│   ├── 1. kmeans/                   # 1단계 K-Means 결과
+│   ├── 2.RFC/                       # 2단계 Random Forest 결과
+│   └── 3.report/                    # 3단계 품질 평가 결과
+│
 └── assets/                          # 리소스 파일
     ├── beatmaps/                    # 비트맵 데이터
     │   └── song1/
@@ -153,6 +187,87 @@ beat_boxer_game/
 * **WEAVE_R (오른쪽 위빙):** 오른쪽 레인에서 내려오는 노트 (코를 왼쪽으로 이동)
 
 ## 📋 버전 관리
+
+### v1.1 (2024-12)
+
+**플레이어 행동분석 및 교정 제안 버전**
+
+#### ✨ 새로운 기능
+
+**데이터 수집 시스템**
+* **포즈 데이터 수집:** 게임 중 포즈 데이터를 실시간으로 수집하여 CSV 파일로 저장
+* **테스트 모드 데이터 수집:** 테스트 모드에서만 데이터 수집 활성화
+* **노트별 포즈 기록:** 각 노트가 히트존에 도달할 때의 포즈 데이터 기록
+* **8개 변수 측정:** 왼손/오른손 거리 및 각도, 왼팔/오른팔 각도, 코 위치 등
+
+**3단계 데이터 마이닝 파이프라인**
+* **1단계: 고급자세 기준 정의**
+  - K-Means Clustering (K=1, 2, 3)을 통한 상급자 기준 포즈 벡터(Centroid) 정의
+  - Silhouette Score 기반 최적 K 선택
+  - IQR 필터를 통한 이상치 제거
+  - 레이더 차트를 통한 시각화
+
+* **2단계: 평가항목 정의**
+  - Random Forest Classifier를 통한 숙련도 분류
+  - 변수 중요도(Feature Importance) 추출
+  - 가중치 기반 평가 시스템 구축
+  - 히트맵을 통한 변수 중요도 시각화
+
+* **3단계: 포즈품질 습관 평가**
+  - 가중 유클리드 거리 기반 포즈 품질 점수 계산 (0-100점)
+  - 통계 분석 (평균, 표준편차, 최소/최대값)
+  - 변수별 오차 분석 및 일관성 평가
+  - 종합 교정 보고서 생성
+
+**개인화된 교정 제안**
+* **포즈별 문제점 진단:** 왼손 방어, 오른손 방어, 바디샷 방어 영역별 분석
+* **구체적 개선 방안:** 변수별 목표값 및 조정 방법 제시
+* **시각적 비교 분석:** 레이더 차트, 히트맵, 박스플롯을 통한 직관적 비교
+* **우선순위별 교정 계획:** 문제 심각도에 따른 단계별 개선 방안
+
+#### 📊 데이터 분석 도구
+
+**분석 스크립트**
+* `scripts/step1_define_pose_centroid.py`: 상급자 기준 포즈 벡터 정의
+* `scripts/step2_define_evaluation_items.py`: 변수 중요도 및 가중치 추출
+* `scripts/step3_evaluate_pose_quality.py`: 포즈 품질 평가 및 리포트 생성
+* `scripts/compare_guard_position.py`: 가드 포지션 상세 비교 분석
+
+**생성되는 리포트**
+* `reports/1. kmeans/`: K-Means 클러스터링 결과 및 레이더 차트
+* `reports/2.RFC/`: Random Forest 변수 중요도 차트 및 히트맵
+* `reports/3.report/`: 포즈 품질 평가 리포트 및 시각화
+
+**데이터 저장 위치**
+* `data/pose_data/`: 수집된 포즈 데이터 (CSV 형식)
+* `data/pose_standards.json`: 상급자 기준 포즈 벡터
+* `data/pose_evaluation_weights.json`: 변수 중요도 가중치
+
+#### 📝 문서
+
+**데이터 마이닝 문서**
+* `docs/pose_data_mining_plan.md`: 3단계 데이터 마이닝 계획
+* `docs/pose_data_mining_1.md`: 1단계 분석 결과 및 해석
+* `docs/pose_data_mining_2.md`: 2단계 분석 결과 및 해석
+* `docs/pose_data_mining_3.md`: 3단계 분석 결과 및 해석
+* `docs/pose_data_mining_result.md`: 종합 분석 및 기술적 교정 제안
+
+#### 🔧 기술적 개선
+
+* **데이터 수집 모듈:** `core/pose_data_collector.py` 추가
+* **포즈 판별 모듈:** `core/pose_discriminator.py` 추가 (향후 확장)
+* **CSV 데이터 저장:** 게임 종료 시 자동으로 포즈 데이터 저장
+* **데이터 분석 파이프라인:** Python 스크립트 기반 배치 분석 시스템
+
+#### 🎯 기대효과
+
+* **실시간 포즈 교정:** 게임 중 즉각적인 피드백을 통한 자세 개선
+* **과학적 분석:** 데이터 기반 객관적 포즈 평가
+* **개인화된 학습:** 개인별 포즈 습관 분석 및 맞춤형 교정 제안
+* **안전성 향상:** 잘못된 자세 조기 발견 및 교정을 통한 부상 방지
+* **학습 효율성:** 정량적 지표를 통한 빠른 기술 습득
+
+---
 
 ### v1.0 (2024-12)
 

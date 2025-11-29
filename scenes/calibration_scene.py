@@ -33,6 +33,8 @@ class CalibrationScene(BaseScene):
         self.last_left_fist = None
         self.last_right_fist = None
         self.countdown_remaining = None
+        # next_scene_name 초기화 (startup에서 None으로 설정됨)
+        print(f"[CalibrationScene] Startup: next_scene_name={self.next_scene_name}")
 
     def _build_targets(self) -> None:
         if not self.source_width or not self.source_height:
@@ -60,6 +62,12 @@ class CalibrationScene(BaseScene):
 
     def update(self, delta_time: float, **kwargs):
         super().update(delta_time, **kwargs)
+        
+        # next_scene_name이 설정되어 있으면 씬 전환 대기 (키 입력으로 설정된 경우)
+        if self.next_scene_name:
+            print(f"[CalibrationScene] update: next_scene_name={self.next_scene_name}, waiting for scene switch")
+            return
+        
         if self.pose_tracker is None:
             # 포즈 트래커가 없으면 바로 게임으로 이동
             self.persistent_data["calibrated"] = False
@@ -196,16 +204,35 @@ class CalibrationScene(BaseScene):
         arcade.draw_circle_outline(cx, cy, radius + 2, arcade.color.WHITE, 2)
 
     def on_key_press(self, symbol: int, modifiers: int) -> None:
-        if symbol == arcade.key.KEY_0:
-            print("[CalibrationScene] '0' pressed – skipping calibration (normal mode).")
+        # 디버깅: 모든 키 입력 로그 출력
+        print(f"[CalibrationScene] Key pressed: symbol={symbol}, modifiers={modifiers}, char={chr(symbol) if 32 <= symbol <= 126 else 'N/A'}")
+        
+        # 0 키 처리 (여러 방법으로 체크)
+        is_zero = (
+            symbol == arcade.key.KEY_0 or 
+            symbol == arcade.key.NUM_0 or 
+            symbol == ord('0') or
+            symbol == 48  # ASCII 코드 직접 체크
+        )
+        
+        # 9 키 처리 (여러 방법으로 체크)
+        is_nine = (
+            symbol == arcade.key.KEY_9 or 
+            symbol == arcade.key.NUM_9 or 
+            symbol == ord('9') or
+            symbol == 57  # ASCII 코드 직접 체크
+        )
+        
+        if is_zero:
+            print(f"[CalibrationScene] '0' detected (symbol={symbol}) – skipping calibration (normal mode).")
             self.persistent_data["calibrated"] = False
             self.persistent_data["test_mode"] = False
             if self.pose_tracker:
                 self.pose_tracker.set_test_mode(False)
             self.next_scene_name = "GAME"
             print(f"[CalibrationScene] Setting next_scene_name to: {self.next_scene_name}")
-        elif symbol == arcade.key.KEY_9:
-            print("[CalibrationScene] '9' pressed – skipping calibration (test mode).")
+        elif is_nine:
+            print(f"[CalibrationScene] '9' detected (symbol={symbol}) – skipping calibration (test mode).")
             self.persistent_data["calibrated"] = False
             self.persistent_data["test_mode"] = True
             if self.pose_tracker:

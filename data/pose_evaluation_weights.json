@@ -1,0 +1,328 @@
+{
+  "metadata": {
+    "description": "포즈 타입별 변수 중요도 (가중치) - Random Forest Classifier",
+    "expert_data_source": "/Users/awesomej/Code/beat_boxer_game/data/pose_data/상급자 Sample1.csv",
+    "beginner_data_source": "/Users/awesomej/Code/beat_boxer_game/data/pose_data/초심자 Sample1.csv",
+    "variables": [
+      "left_fist_dist",
+      "left_fist_angle",
+      "right_fist_dist",
+      "right_fist_angle",
+      "left_arm_angle",
+      "right_arm_angle",
+      "nose_position",
+      "nose_above_shoulder"
+    ],
+    "pose_types": [
+      "GUARD",
+      "JAB_L",
+      "STRAIGHT_R",
+      "WEAVE_L",
+      "WEAVE_R"
+    ],
+    "method": "Random Forest Classifier",
+    "cv_folds": 5
+  },
+  "results": {
+    "GUARD": {
+      "cv_mean_accuracy": 0.975,
+      "cv_std_accuracy": 0.03333333333333334,
+      "cv_scores": [
+        0.9583333333333334,
+        0.9166666666666666,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "feature_importance": {
+        "left_fist_dist": 0.39460249729535984,
+        "left_fist_angle": 0.1922478651503327,
+        "right_fist_dist": 0.09192215292449069,
+        "right_fist_angle": 0.03991738382044718,
+        "left_arm_angle": 0.030613848933068403,
+        "right_arm_angle": 0.21366541602136427,
+        "nose_position": 0.03703083585493684,
+        "nose_above_shoulder": 0.0
+      },
+      "sorted_importance": [
+        {
+          "variable": "left_fist_dist",
+          "importance": 0.39460249729535984
+        },
+        {
+          "variable": "right_arm_angle",
+          "importance": 0.21366541602136427
+        },
+        {
+          "variable": "left_fist_angle",
+          "importance": 0.1922478651503327
+        },
+        {
+          "variable": "right_fist_dist",
+          "importance": 0.09192215292449069
+        },
+        {
+          "variable": "right_fist_angle",
+          "importance": 0.03991738382044718
+        },
+        {
+          "variable": "nose_position",
+          "importance": 0.03703083585493684
+        },
+        {
+          "variable": "left_arm_angle",
+          "importance": 0.030613848933068403
+        },
+        {
+          "variable": "nose_above_shoulder",
+          "importance": 0.0
+        }
+      ],
+      "data_count": 117,
+      "class_distribution": {
+        "expert": 80,
+        "beginner": 37
+      }
+    },
+    "JAB_L": {
+      "cv_mean_accuracy": 1.0,
+      "cv_std_accuracy": 0.0,
+      "cv_scores": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "feature_importance": {
+        "left_fist_dist": 0.279270592710457,
+        "left_fist_angle": 0.03388954093500151,
+        "right_fist_dist": 0.13577622667813208,
+        "right_fist_angle": 0.36388610807339283,
+        "left_arm_angle": 0.008038064219934861,
+        "right_arm_angle": 0.1503284293774998,
+        "nose_position": 0.02881103800558199,
+        "nose_above_shoulder": 0.0
+      },
+      "sorted_importance": [
+        {
+          "variable": "right_fist_angle",
+          "importance": 0.36388610807339283
+        },
+        {
+          "variable": "left_fist_dist",
+          "importance": 0.279270592710457
+        },
+        {
+          "variable": "right_arm_angle",
+          "importance": 0.1503284293774998
+        },
+        {
+          "variable": "right_fist_dist",
+          "importance": 0.13577622667813208
+        },
+        {
+          "variable": "left_fist_angle",
+          "importance": 0.03388954093500151
+        },
+        {
+          "variable": "nose_position",
+          "importance": 0.02881103800558199
+        },
+        {
+          "variable": "left_arm_angle",
+          "importance": 0.008038064219934861
+        },
+        {
+          "variable": "nose_above_shoulder",
+          "importance": 0.0
+        }
+      ],
+      "data_count": 99,
+      "class_distribution": {
+        "expert": 47,
+        "beginner": 52
+      }
+    },
+    "STRAIGHT_R": {
+      "cv_mean_accuracy": 0.956084656084656,
+      "cv_std_accuracy": 0.036402347113825326,
+      "cv_scores": [
+        0.9642857142857143,
+        0.9642857142857143,
+        0.8888888888888888,
+        1.0,
+        0.9629629629629629
+      ],
+      "feature_importance": {
+        "left_fist_dist": 0.3429042903915392,
+        "left_fist_angle": 0.03367128823649177,
+        "right_fist_dist": 0.11808324606001182,
+        "right_fist_angle": 0.40614968835660065,
+        "left_arm_angle": 0.024504705909988874,
+        "right_arm_angle": 0.03600165457838895,
+        "nose_position": 0.03868512646697872,
+        "nose_above_shoulder": 0.0
+      },
+      "sorted_importance": [
+        {
+          "variable": "right_fist_angle",
+          "importance": 0.40614968835660065
+        },
+        {
+          "variable": "left_fist_dist",
+          "importance": 0.3429042903915392
+        },
+        {
+          "variable": "right_fist_dist",
+          "importance": 0.11808324606001182
+        },
+        {
+          "variable": "nose_position",
+          "importance": 0.03868512646697872
+        },
+        {
+          "variable": "right_arm_angle",
+          "importance": 0.03600165457838895
+        },
+        {
+          "variable": "left_fist_angle",
+          "importance": 0.03367128823649177
+        },
+        {
+          "variable": "left_arm_angle",
+          "importance": 0.024504705909988874
+        },
+        {
+          "variable": "nose_above_shoulder",
+          "importance": 0.0
+        }
+      ],
+      "data_count": 137,
+      "class_distribution": {
+        "expert": 71,
+        "beginner": 66
+      }
+    },
+    "WEAVE_L": {
+      "cv_mean_accuracy": 0.9277777777777778,
+      "cv_std_accuracy": 0.09875771574795099,
+      "cv_scores": [
+        1.0,
+        1.0,
+        1.0,
+        0.8888888888888888,
+        0.75
+      ],
+      "feature_importance": {
+        "left_fist_dist": 0.0448717397902482,
+        "left_fist_angle": 0.16514186853997834,
+        "right_fist_dist": 0.5052606955689214,
+        "right_fist_angle": 0.07287154596866172,
+        "left_arm_angle": 0.05994269898612465,
+        "right_arm_angle": 0.04966689976977779,
+        "nose_position": 0.10224455137628798,
+        "nose_above_shoulder": 0.0
+      },
+      "sorted_importance": [
+        {
+          "variable": "right_fist_dist",
+          "importance": 0.5052606955689214
+        },
+        {
+          "variable": "left_fist_angle",
+          "importance": 0.16514186853997834
+        },
+        {
+          "variable": "nose_position",
+          "importance": 0.10224455137628798
+        },
+        {
+          "variable": "right_fist_angle",
+          "importance": 0.07287154596866172
+        },
+        {
+          "variable": "left_arm_angle",
+          "importance": 0.05994269898612465
+        },
+        {
+          "variable": "right_arm_angle",
+          "importance": 0.04966689976977779
+        },
+        {
+          "variable": "left_fist_dist",
+          "importance": 0.0448717397902482
+        },
+        {
+          "variable": "nose_above_shoulder",
+          "importance": 0.0
+        }
+      ],
+      "data_count": 44,
+      "class_distribution": {
+        "expert": 21,
+        "beginner": 23
+      }
+    },
+    "WEAVE_R": {
+      "cv_mean_accuracy": 1.0,
+      "cv_std_accuracy": 0.0,
+      "cv_scores": [
+        1.0,
+        1.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "feature_importance": {
+        "left_fist_dist": 0.05518766589744304,
+        "left_fist_angle": 0.1176374023791823,
+        "right_fist_dist": 0.524054089018335,
+        "right_fist_angle": 0.17587966413771455,
+        "left_arm_angle": 0.03791867114684585,
+        "right_arm_angle": 0.02731163596564863,
+        "nose_position": 0.06201087145483071,
+        "nose_above_shoulder": 0.0
+      },
+      "sorted_importance": [
+        {
+          "variable": "right_fist_dist",
+          "importance": 0.524054089018335
+        },
+        {
+          "variable": "right_fist_angle",
+          "importance": 0.17587966413771455
+        },
+        {
+          "variable": "left_fist_angle",
+          "importance": 0.1176374023791823
+        },
+        {
+          "variable": "nose_position",
+          "importance": 0.06201087145483071
+        },
+        {
+          "variable": "left_fist_dist",
+          "importance": 0.05518766589744304
+        },
+        {
+          "variable": "left_arm_angle",
+          "importance": 0.03791867114684585
+        },
+        {
+          "variable": "right_arm_angle",
+          "importance": 0.02731163596564863
+        },
+        {
+          "variable": "nose_above_shoulder",
+          "importance": 0.0
+        }
+      ],
+      "data_count": 46,
+      "class_distribution": {
+        "expert": 25,
+        "beginner": 21
+      }
+    }
+  }
+}

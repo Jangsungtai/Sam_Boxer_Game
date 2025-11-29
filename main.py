@@ -153,6 +153,15 @@ class GameWindow(arcade.Window):
     def on_key_press(self, symbol: int, modifiers: int) -> None:
         if symbol == arcade.key.ESCAPE:
             print("[GameWindow] ESC pressed. Closing window.")
+            # ESC를 누르면 현재 씬의 cleanup을 먼저 호출 (CSV 저장 등)
+            current_view = self.current_view
+            if current_view is not None and hasattr(current_view, "cleanup"):
+                try:
+                    print("[GameWindow] Calling cleanup before closing...")
+                    current_view.cleanup()
+                    print("[GameWindow] Cleanup completed.")
+                except Exception as e:
+                    print(f"[GameWindow] Cleanup 중 오류: {e}")
             self.close()
             return
         current_view = self.current_view
@@ -160,6 +169,16 @@ class GameWindow(arcade.Window):
             current_view.on_key_press(symbol, modifiers)
 
     def on_close(self) -> None:
+        # on_key_press에서 ESC를 누르면 cleanup을 먼저 호출하지만,
+        # 다른 방법으로 창이 닫힐 수도 있으므로 여기서도 호출
+        # (cleanup이 중복 호출되어도 안전하도록 구현되어 있음)
+        current_view = self.current_view
+        if current_view is not None and hasattr(current_view, "cleanup"):
+            try:
+                current_view.cleanup()
+            except Exception as e:
+                print(f"[GameWindow] Cleanup 중 오류: {e}")
+        
         if self.capture is not None:
             self.capture.release()
             self.capture = None

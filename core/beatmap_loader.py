@@ -58,7 +58,7 @@ class BeatmapLoader:
             비트맵 아이템 리스트
         """
         mapping = {
-            "0": None, 
+            "0": "GUARD",  # GUARD 노트 추가
             "1": "JAB_L", 
             "2": "JAB_R", 
             "3": "WEAVE_L", 

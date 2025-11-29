@@ -1,0 +1,6 @@
+Note_Type,left_fist_dist,left_fist_angle,right_fist_dist,right_fist_angle,left_arm_angle,right_arm_angle,nose_position,nose_above_shoulder
+GUARD,0.215,45.3,0.342,135.7,120.5,125.2,0.05,1
+JAB_L,0.185,35.2,0.312,128.4,165.8,118.3,0.02,1
+STRAIGHT_R,0.225,48.1,0.892,142.6,115.7,162.4,-0.03,1
+WEAVE_L,0.198,42.8,0.356,132.1,122.3,127.9,0.312,1
+WEAVE_R,0.207,44.5,0.338,134.3,121.8,126.5,-0.287,1

@@ -29,6 +29,7 @@ class Note:
         self.hit = False
         self.missed = False
         self.judge_result: Optional[str] = None
+        self.pose_data_collected: bool = False  # 포즈 데이터 수집 여부
 
         self.width = width
         self.height = height
@@ -53,7 +54,7 @@ class Note:
         self.x = self.x0
         self.y = self.y0
 
-        type_to_label = {"JAB_L": "J", "JAB_R": "S", "DUCK": "D", "BOMB": "4", "WEAVE_L": "WL", "WEAVE_R": "WR"}
+        type_to_label = {"JAB_L": "J", "JAB_R": "S", "DUCK": "D", "BOMB": "4", "WEAVE_L": "WL", "WEAVE_R": "WR", "GUARD": "G"}
         self.label = type_to_label.get(self.typ)
 
     def _initial_position(self, width: int, height: int) -> Tuple[int, int]:
@@ -73,6 +74,9 @@ class Note:
         if self.typ == "WEAVE_R":
             # 위빙 R: 오른쪽 레인에서 시작하여 중앙으로 이동
             return width + 100, -100
+        if self.typ == "GUARD":
+            # GUARD: 중앙에서 시작하여 중앙으로 이동
+            return target_x, target_y
         return target_x, target_y
 
     def get_progress(self, now: float, start_time: float) -> float:
@@ -100,6 +104,10 @@ class Note:
         scale_x: float = 1.0,
         scale_y: float = 1.0,
     ) -> None:
+        # 테스트 모드에서 GUARD 노트는 표시하지 않음 (데이터는 기록됨)
+        if self.test_mode and self.typ == "GUARD":
+            return
+        
         if self.hit and not self.missed:
             return
 

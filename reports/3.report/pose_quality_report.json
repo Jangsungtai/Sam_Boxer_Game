@@ -1,0 +1,2181 @@
+{
+  "metadata": {
+    "description": "포즈 품질 평가 결과",
+    "user_data_source": "/Users/awesomej/Code/beat_boxer_game/data/pose_data/초심자 Sample2.csv",
+    "standards_source": "/Users/awesomej/Code/beat_boxer_game/data/pose_standards.json",
+    "weights_source": "/Users/awesomej/Code/beat_boxer_game/data/pose_evaluation_weights.json",
+    "evaluation_date": "2025-11-29 08:14:28"
+  },
+  "results": {
+    "GUARD": {
+      "count": 26,
+      "mean_distance": 32.660508319106015,
+      "std_distance": 18.4911924068468,
+      "mean_score": 55.54516071366683,
+      "std_score": 19.175830574153895,
+      "min_score": 26.446256901814834,
+      "max_score": 89.19485485947317,
+      "mean_variable_errors": {
+        "left_fist_dist": 0.5533399556539307,
+        "left_fist_angle": -13.229033980093341,
+        "right_fist_dist": 0.22788837614370056,
+        "right_fist_angle": 13.21199668880784,
+        "left_arm_angle": 12.533080902505398,
+        "right_arm_angle": 59.418935844030166,
+        "nose_position": 0.02409935937598508,
+        "nose_above_shoulder": 0.0
+      },
+      "std_variable_errors": {
+        "left_fist_dist": 0.14551137963041044,
+        "left_fist_angle": 13.322419823375325,
+        "right_fist_dist": 0.19837319942954215,
+        "right_fist_angle": 37.85659875858545,
+        "left_arm_angle": 11.15550454523165,
+        "right_arm_angle": 49.02643196554601,
+        "nose_position": 0.2740733304687987,
+        "nose_above_shoulder": 0.0
+      },
+      "top_5_worst_notes": [
+        {
+          "index": 23,
+          "distance": 66.5027776848778,
+          "score": 26.446256901814834,
+          "variable_errors": {
+            "left_fist_dist": 0.633926981802817,
+            "left_fist_angle": -6.020489289177078,
+            "right_fist_dist": 0.15310932931287635,
+            "right_fist_angle": -29.308089051497177,
+            "left_arm_angle": -0.8500200210156073,
+            "right_arm_angle": 143.19517178569117,
+            "nose_position": -0.22465674831673815,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 99,
+          "distance": 61.543734534009964,
+          "score": 29.20370238688327,
+          "variable_errors": {
+            "left_fist_dist": 0.32040664280037684,
+            "left_fist_angle": -25.848351166080192,
+            "right_fist_dist": 0.37447837319877375,
+            "right_fist_angle": -25.37331814416207,
+            "left_arm_angle": 2.1618369244956437,
+            "right_arm_angle": 130.4015339106557,
+            "nose_position": 0.19474873838681214,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 75,
+          "distance": 58.84384535286072,
+          "score": 30.823989877616466,
+          "variable_errors": {
+            "left_fist_dist": 0.4824490829083921,
+            "left_fist_angle": -24.49027120488256,
+            "right_fist_dist": 0.5772419303497651,
+            "right_fist_angle": -14.01223838058192,
+            "left_arm_angle": 13.423837873299146,
+            "right_arm_angle": 124.91180163509496,
+            "nose_position": 0.32308464643247586,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 43,
+          "distance": 56.96238485303618,
+          "score": 32.005971313149296,
+          "variable_errors": {
+            "left_fist_dist": 0.5762111201571407,
+            "left_fist_angle": -29.633447834839444,
+            "right_fist_dist": 0.47952001114274256,
+            "right_fist_angle": -10.251206584867717,
+            "left_arm_angle": 27.341454846070814,
+            "right_arm_angle": 119.45023274819967,
+            "nose_position": 0.3797736733726117,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 55,
+          "distance": 53.234029548132625,
+          "score": 34.48379815462662,
+          "variable_errors": {
+            "left_fist_dist": 0.51530166562562,
+            "left_fist_angle": -25.87308412535856,
+            "right_fist_dist": 0.3572112829122621,
+            "right_fist_angle": -24.393538284198712,
+            "left_arm_angle": 2.4304001800304995,
+            "right_arm_angle": 112.01876874096038,
+            "nose_position": 0.13720368057567725,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ],
+      "worst_variables": [
+        {
+          "variable": "right_arm_angle",
+          "mean_abs_error": 125.99550176412038
+        },
+        {
+          "variable": "left_fist_angle",
+          "mean_abs_error": 22.373128724067566
+        },
+        {
+          "variable": "right_fist_angle",
+          "mean_abs_error": 20.667678089061518
+        }
+      ],
+      "note_analyses": [
+        {
+          "index": 3,
+          "distance": 13.480181682209412,
+          "score": 76.36821322589078,
+          "variable_errors": {
+            "left_fist_dist": 0.42814557889392163,
+            "left_fist_angle": -12.186193479625388,
+            "right_fist_dist": 0.174820488889584,
+            "right_fist_angle": 41.84312268315139,
+            "left_arm_angle": 6.003149426748542,
+            "right_arm_angle": 19.60196603409936,
+            "nose_position": -0.037491975846575855,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 7,
+          "distance": 22.21766144438524,
+          "score": 64.12388767235363,
+          "variable_errors": {
+            "left_fist_dist": 0.624634507802921,
+            "left_fist_angle": 15.266313371434762,
+            "right_fist_dist": 0.1612088575229299,
+            "right_fist_angle": 104.48040177660849,
+            "left_arm_angle": 14.339196485718183,
+            "right_arm_angle": -5.565303647163088,
+            "nose_position": -0.4055541443658989,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 11,
+          "distance": 13.71238601091031,
+          "score": 76.01437489603684,
+          "variable_errors": {
+            "left_fist_dist": 0.5042374013612756,
+            "left_fist_angle": -19.816977625326444,
+            "right_fist_dist": 0.24409713668909117,
+            "right_fist_angle": 25.028749482518464,
+            "left_arm_angle": 26.641804137034043,
+            "right_arm_angle": 17.53376160525247,
+            "nose_position": 0.2728329837044339,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 15,
+          "distance": 19.9134726101772,
+          "score": 67.1481071229269,
+          "variable_errors": {
+            "left_fist_dist": 0.6940424397126179,
+            "left_fist_angle": 18.75608098818168,
+            "right_fist_dist": 0.04941706585924843,
+            "right_fist_angle": 72.43162995244612,
+            "left_arm_angle": -2.5514913808337165,
+            "right_arm_angle": 23.609091293998873,
+            "nose_position": -0.5400704005485549,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 19,
+          "distance": 15.590330531224845,
+          "score": 73.21230993676724,
+          "variable_errors": {
+            "left_fist_dist": 0.585782920829018,
+            "left_fist_angle": -32.38366937687687,
+            "right_fist_dist": 0.19986592123908598,
+            "right_fist_angle": 15.654813931086608,
+            "left_arm_angle": 25.48398851806239,
+            "right_arm_angle": 7.38023605796257,
+            "nose_position": 0.41417676671955295,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 23,
+          "distance": 66.5027776848778,
+          "score": 26.446256901814834,
+          "variable_errors": {
+            "left_fist_dist": 0.633926981802817,
+            "left_fist_angle": -6.020489289177078,
+            "right_fist_dist": 0.15310932931287635,
+            "right_fist_angle": -29.308089051497177,
+            "left_arm_angle": -0.8500200210156073,
+            "right_arm_angle": 143.19517178569117,
+            "nose_position": -0.22465674831673815,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 27,
+          "distance": 29.76724175073742,
+          "score": 55.13724005720048,
+          "variable_errors": {
+            "left_fist_dist": 0.568219496502874,
+            "left_fist_angle": -26.766557614324256,
+            "right_fist_dist": 0.5065495228406895,
+            "right_fist_angle": -0.9088586344794152,
+            "left_arm_angle": 37.3975431800459,
+            "right_arm_angle": 57.455879108706625,
+            "nose_position": 0.38952530361579946,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 31,
+          "distance": 11.09662360034964,
+          "score": 80.09694503679215,
+          "variable_errors": {
+            "left_fist_dist": 0.5972782593746118,
+            "left_fist_angle": -3.1700179612846,
+            "right_fist_dist": -0.03743367213820903,
+            "right_fist_angle": 20.686564027032972,
+            "left_arm_angle": 1.187363645523063,
+            "right_arm_angle": 22.055403460713208,
+            "nose_position": -0.20193917552580046,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 35,
+          "distance": 49.61415931933934,
+          "score": 37.072927994629815,
+          "variable_errors": {
+            "left_fist_dist": 0.4925836025854174,
+            "left_fist_angle": -36.22551002553877,
+            "right_fist_dist": 0.5492794680016482,
+            "right_fist_angle": -15.617464736273078,
+            "left_arm_angle": 18.050149345922232,
+            "right_arm_angle": 101.22773271160366,
+            "nose_position": 0.3861277491536756,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 39,
+          "distance": 49.446364043454956,
+          "score": 37.197550231511016,
+          "variable_errors": {
+            "left_fist_dist": 0.6152390414513025,
+            "left_fist_angle": -7.105398334128665,
+            "right_fist_dist": 0.15668424850781348,
+            "right_fist_angle": -9.650545393806397,
+            "left_arm_angle": 10.57334249474237,
+            "right_arm_angle": 106.59875794007347,
+            "nose_position": -0.23377597606137965,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 43,
+          "distance": 56.96238485303618,
+          "score": 32.005971313149296,
+          "variable_errors": {
+            "left_fist_dist": 0.5762111201571407,
+            "left_fist_angle": -29.633447834839444,
+            "right_fist_dist": 0.47952001114274256,
+            "right_fist_angle": -10.251206584867717,
+            "left_arm_angle": 27.341454846070814,
+            "right_arm_angle": 119.45023274819967,
+            "nose_position": 0.3797736733726117,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 47,
+          "distance": 21.282613788912343,
+          "score": 65.33434859818762,
+          "variable_errors": {
+            "left_fist_dist": 0.8953686083838326,
+            "left_fist_angle": 3.1303317229150025,
+            "right_fist_dist": -0.13824996699383396,
+            "right_fist_angle": 103.67880222529666,
+            "left_arm_angle": 8.438838365456888,
+            "right_arm_angle": -9.546538988768944,
+            "nose_position": -0.5495928026181983,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 51,
+          "distance": 49.233738159944835,
+          "score": 37.35607028693874,
+          "variable_errors": {
+            "left_fist_dist": 0.787612801075477,
+            "left_fist_angle": -14.92450976124644,
+            "right_fist_dist": 0.3625045820650795,
+            "right_fist_angle": -20.10922738425012,
+            "left_arm_angle": 4.881929300246141,
+            "right_arm_angle": 105.18592775098375,
+            "nose_position": -0.033459759852534354,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 55,
+          "distance": 53.234029548132625,
+          "score": 34.48379815462662,
+          "variable_errors": {
+            "left_fist_dist": 0.51530166562562,
+            "left_fist_angle": -25.87308412535856,
+            "right_fist_dist": 0.3572112829122621,
+            "right_fist_angle": -24.393538284198712,
+            "left_arm_angle": 2.4304001800304995,
+            "right_arm_angle": 112.01876874096038,
+            "nose_position": 0.13720368057567725,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 59,
+          "distance": 40.19494393464567,
+          "score": 44.75804957408739,
+          "variable_errors": {
+            "left_fist_dist": 0.5566515598679465,
+            "left_fist_angle": -20.30543909473562,
+            "right_fist_dist": 0.6295601283456369,
+            "right_fist_angle": -5.707969249707389,
+            "left_arm_angle": 22.047440207582927,
+            "right_arm_angle": 84.34476456217915,
+            "nose_position": 0.2913552844002091,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 63,
+          "distance": 42.5402774488398,
+          "score": 42.707076692712945,
+          "variable_errors": {
+            "left_fist_dist": 0.5258401947431444,
+            "left_fist_angle": -8.489947757864343,
+            "right_fist_dist": 0.21415839605279852,
+            "right_fist_angle": -15.42613636317219,
+            "left_arm_angle": 9.517057533575546,
+            "right_arm_angle": 91.36109226553498,
+            "nose_position": -0.009696184749423853,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 67,
+          "distance": 33.22270673238074,
+          "score": 51.4554328439779,
+          "variable_errors": {
+            "left_fist_dist": 0.552714183811386,
+            "left_fist_angle": -12.954587343805201,
+            "right_fist_dist": 0.10962693192191952,
+            "right_fist_angle": -3.7674165428391575,
+            "left_arm_angle": 10.263515710593822,
+            "right_arm_angle": 70.68568086413588,
+            "nose_position": -0.006330783440823055,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 71,
+          "distance": 11.908011950090225,
+          "score": 78.80764003999475,
+          "variable_errors": {
+            "left_fist_dist": 0.5258791020043985,
+            "left_fist_angle": -1.8933396792227768,
+            "right_fist_dist": 0.008356071115197428,
+            "right_fist_angle": 59.130449842395734,
+            "left_arm_angle": -1.926652541204009,
+            "right_arm_angle": -2.4860660369695955,
+            "nose_position": -0.13857889530846024,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 75,
+          "distance": 58.84384535286072,
+          "score": 30.823989877616466,
+          "variable_errors": {
+            "left_fist_dist": 0.4824490829083921,
+            "left_fist_angle": -24.49027120488256,
+            "right_fist_dist": 0.5772419303497651,
+            "right_fist_angle": -14.01223838058192,
+            "left_arm_angle": 13.423837873299146,
+            "right_arm_angle": 124.91180163509496,
+            "nose_position": 0.32308464643247586,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 79,
+          "distance": 20.36553739695392,
+          "score": 66.54373748766234,
+          "variable_errors": {
+            "left_fist_dist": 0.6630985642210319,
+            "left_fist_angle": -12.390808509988915,
+            "right_fist_dist": -0.021087621486045927,
+            "right_fist_angle": 11.128736303837542,
+            "left_arm_angle": 25.488376169538242,
+            "right_arm_angle": 41.06054316917746,
+            "nose_position": 0.018521977421966044,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 83,
+          "distance": 12.328354719269782,
+          "score": 78.14789269296884,
+          "variable_errors": {
+            "left_fist_dist": 0.6644991669990041,
+            "left_fist_angle": -11.976172393815261,
+            "right_fist_dist": 0.05014981106104255,
+            "right_fist_angle": 46.87779722482563,
+            "left_arm_angle": 25.483327272400494,
+            "right_arm_angle": 8.824612199352007,
+            "nose_position": 0.15295878399389645,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 87,
+          "distance": 47.3149171744938,
+          "score": 38.81752587672563,
+          "variable_errors": {
+            "left_fist_dist": 0.6603819087931952,
+            "left_fist_angle": -19.337462772213996,
+            "right_fist_dist": 0.24496451876975278,
+            "right_fist_angle": -6.739766995061757,
+            "left_arm_angle": 25.88431095787754,
+            "right_arm_angle": 100.17899027972726,
+            "nose_position": 0.15259154590971774,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 91,
+          "distance": 13.265708487647089,
+          "score": 76.69649549307555,
+          "variable_errors": {
+            "left_fist_dist": 0.4483976283214061,
+            "left_fist_angle": -20.74037346233132,
+            "right_fist_dist": 0.19380036467969453,
+            "right_fist_angle": 46.897858225977984,
+            "left_arm_angle": 13.236468785877186,
+            "right_arm_angle": -0.4276421326704867,
+            "nose_position": 0.15503991205417145,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 95,
+          "distance": 29.873872087205186,
+          "score": 55.01977930133335,
+          "variable_errors": {
+            "left_fist_dist": 0.283023475594901,
+            "left_fist_angle": -7.673593531317238,
+            "right_fist_dist": 0.2574169278006584,
+            "right_fist_angle": -17.96530068892379,
+            "left_arm_angle": -1.7955113197634918,
+            "right_arm_angle": 63.7411142693461,
+            "nose_position": -0.12057076128969085,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 99,
+          "distance": 61.543734534009964,
+          "score": 29.20370238688327,
+          "variable_errors": {
+            "left_fist_dist": 0.32040664280037684,
+            "left_fist_angle": -25.848351166080192,
+            "right_fist_dist": 0.37447837319877375,
+            "right_fist_angle": -25.37331814416207,
+            "left_arm_angle": 2.1618369244956437,
+            "right_arm_angle": 130.4015339106557,
+            "nose_position": 0.19474873838681214,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 103,
+          "distance": 5.717341450667391,
+          "score": 89.19485485947317,
+          "variable_errors": {
+            "left_fist_dist": 0.1849129113781688,
+            "left_fist_angle": -0.9014072209743631,
+            "right_fist_dist": 0.06784767207601172,
+            "right_fist_angle": -5.095935332352838,
+            "left_arm_angle": 2.7084473671155624,
+            "right_arm_angle": 12.094820356907736,
+            "nose_position": -0.13964009404130895,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ]
+    },
+    "JAB_L": {
+      "count": 26,
+      "mean_distance": 88.68103782772013,
+      "std_distance": 13.263372474001637,
+      "mean_score": 15.34056563761203,
+      "std_score": 8.489566923228683,
+      "min_score": 0.0,
+      "max_score": 31.831945181106907,
+      "mean_variable_errors": {
+        "left_fist_dist": 0.34960647762329977,
+        "left_fist_angle": -79.1912651077584,
+        "right_fist_dist": 0.1495658707812924,
+        "right_fist_angle": 110.29226146131775,
+        "left_arm_angle": 26.3238085826586,
+        "right_arm_angle": -132.00438104573803,
+        "nose_position": -0.052123221320198566,
+        "nose_above_shoulder": 0.0
+      },
+      "std_variable_errors": {
+        "left_fist_dist": 0.19687203263560807,
+        "left_fist_angle": 129.94797304411532,
+        "right_fist_dist": 0.17935853556114484,
+        "right_fist_angle": 22.33003776118625,
+        "left_arm_angle": 39.341195858359754,
+        "right_arm_angle": 8.149428889756514,
+        "nose_position": 0.14084019114392643,
+        "nose_above_shoulder": 0.0
+      },
+      "top_5_worst_notes": [
+        {
+          "index": 33,
+          "distance": 113.78478116462708,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.6455211766853182,
+            "left_fist_angle": -256.54931689775145,
+            "right_fist_dist": 0.2919913043494199,
+            "right_fist_angle": 144.31604226083095,
+            "left_arm_angle": 115.495977768747,
+            "right_arm_angle": -141.98060263143992,
+            "nose_position": -0.43725266806370083,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 73,
+          "distance": 111.06713075660473,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.13646802686733406,
+            "left_fist_angle": -308.8835534492489,
+            "right_fist_dist": 0.23331906309225636,
+            "right_fist_angle": 134.34539389438652,
+            "left_arm_angle": 13.531260103332855,
+            "right_arm_angle": -129.8166110175538,
+            "nose_position": -0.1815139183738274,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 41,
+          "distance": 105.32118956863823,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.2997588574266451,
+            "left_fist_angle": -262.4550911970447,
+            "right_fist_dist": 0.2463536931042153,
+            "right_fist_angle": 128.9539449484215,
+            "left_arm_angle": 37.266361649738485,
+            "right_arm_angle": -133.91435738345697,
+            "nose_position": -0.13867502831358663,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 49,
+          "distance": 105.10456054928497,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.0767082249118668,
+            "left_fist_angle": -301.0134216424404,
+            "right_fist_dist": 0.3423342619198735,
+            "right_fist_angle": 126.94798483988056,
+            "left_arm_angle": 31.028408265176196,
+            "right_arm_angle": -118.31040031783101,
+            "nose_position": 0.03985792745972329,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 17,
+          "distance": 101.40310218608344,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.2215945957938661,
+            "left_fist_angle": -253.28181711599137,
+            "right_fist_dist": 0.13762216375363623,
+            "right_fist_angle": 121.65827608158212,
+            "left_arm_angle": 104.65215266426604,
+            "right_arm_angle": -132.38655331292648,
+            "nose_position": 0.06457794542873072,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ],
+      "worst_variables": [
+        {
+          "variable": "left_fist_angle",
+          "mean_abs_error": 276.43664006049534
+        },
+        {
+          "variable": "right_arm_angle",
+          "mean_abs_error": 131.28170493264165
+        },
+        {
+          "variable": "right_fist_angle",
+          "mean_abs_error": 131.24432840502033
+        }
+      ],
+      "note_analyses": [
+        {
+          "index": 1,
+          "distance": 57.23499174982733,
+          "score": 31.831945181106907,
+          "variable_errors": {
+            "left_fist_dist": 0.43613099616979645,
+            "left_fist_angle": -8.703322173086747,
+            "right_fist_dist": 0.031123248629467803,
+            "right_fist_angle": 60.42905100206208,
+            "left_arm_angle": 8.944390153995043,
+            "right_arm_angle": -113.71139126998558,
+            "nose_position": 0.05574967408337758,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 5,
+          "distance": 85.5613197181043,
+          "score": 18.064411578815314,
+          "variable_errors": {
+            "left_fist_dist": 0.15362919380523976,
+            "left_fist_angle": -293.22312919324503,
+            "right_fist_dist": -0.3368919380315152,
+            "right_fist_angle": 60.140526507698425,
+            "left_arm_angle": 50.682699846301915,
+            "right_arm_angle": -142.9081944398207,
+            "nose_position": 0.013515495870493784,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 9,
+          "distance": 96.26423878280438,
+          "score": 14.583422090635576,
+          "variable_errors": {
+            "left_fist_dist": 0.494208674662159,
+            "left_fist_angle": -241.82385135395216,
+            "right_fist_dist": 0.053895843874368854,
+            "right_fist_angle": 111.10943009113625,
+            "left_arm_angle": 134.3621830150707,
+            "right_arm_angle": -132.7085564569271,
+            "nose_position": -0.025759052128005222,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 13,
+          "distance": 96.23221191121198,
+          "score": 14.59276631071095,
+          "variable_errors": {
+            "left_fist_dist": 0.2876554288073935,
+            "left_fist_angle": -263.25746880955364,
+            "right_fist_dist": 0.1229390245234554,
+            "right_fist_angle": 108.58738489921551,
+            "left_arm_angle": 98.733692753538,
+            "right_arm_angle": -130.0600187969694,
+            "nose_position": -0.04688681712555491,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 17,
+          "distance": 101.40310218608344,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.2215945957938661,
+            "left_fist_angle": -253.28181711599137,
+            "right_fist_dist": 0.13762216375363623,
+            "right_fist_angle": 121.65827608158212,
+            "left_arm_angle": 104.65215266426604,
+            "right_arm_angle": -132.38655331292648,
+            "nose_position": 0.06457794542873072,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 21,
+          "distance": 86.18950078421184,
+          "score": 17.838876885185776,
+          "variable_errors": {
+            "left_fist_dist": 0.31294807004252245,
+            "left_fist_angle": 3.354854643992951,
+            "right_fist_dist": 0.12280738097859678,
+            "right_fist_angle": 111.72391194066601,
+            "left_arm_angle": 5.721339246759209,
+            "right_arm_angle": -138.55300397097176,
+            "nose_position": -0.029250233364123912,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 25,
+          "distance": 90.25130809069707,
+          "score": 16.44701536833098,
+          "variable_errors": {
+            "left_fist_dist": 0.10537347193025848,
+            "left_fist_angle": 25.534764862917086,
+            "right_fist_dist": 0.2142468862387369,
+            "right_fist_angle": 118.24269445673731,
+            "left_arm_angle": 9.43795862880066,
+            "right_arm_angle": -142.08524616816567,
+            "nose_position": -0.009657084031928817,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 29,
+          "distance": 93.12580347942016,
+          "score": 15.528143953503362,
+          "variable_errors": {
+            "left_fist_dist": 0.5790838996767934,
+            "left_fist_angle": 1.8876390807371877,
+            "right_fist_dist": 0.32817844616044556,
+            "right_fist_angle": 126.7218834497093,
+            "left_arm_angle": 1.2637299183422592,
+            "right_arm_angle": -137.17510026267013,
+            "nose_position": -0.12439006474115931,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 33,
+          "distance": 113.78478116462708,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.6455211766853182,
+            "left_fist_angle": -256.54931689775145,
+            "right_fist_dist": 0.2919913043494199,
+            "right_fist_angle": 144.31604226083095,
+            "left_arm_angle": 115.495977768747,
+            "right_arm_angle": -141.98060263143992,
+            "nose_position": -0.43725266806370083,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 37,
+          "distance": 91.75729092568123,
+          "score": 15.959022886138733,
+          "variable_errors": {
+            "left_fist_dist": 0.19787511192535356,
+            "left_fist_angle": 30.594335352137307,
+            "right_fist_dist": 0.2864719131325165,
+            "right_fist_angle": 123.85672364164945,
+            "left_arm_angle": 17.91670088750026,
+            "right_arm_angle": -136.54701139828632,
+            "nose_position": -0.00026303846967182243,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 41,
+          "distance": 105.32118956863823,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.2997588574266451,
+            "left_fist_angle": -262.4550911970447,
+            "right_fist_dist": 0.2463536931042153,
+            "right_fist_angle": 128.9539449484215,
+            "left_arm_angle": 37.266361649738485,
+            "right_arm_angle": -133.91435738345697,
+            "nose_position": -0.13867502831358663,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 45,
+          "distance": 96.90691708019746,
+          "score": 14.397172661951737,
+          "variable_errors": {
+            "left_fist_dist": 0.6075759430710153,
+            "left_fist_angle": 8.260211324782517,
+            "right_fist_dist": 0.27773421430330036,
+            "right_fist_angle": 135.31495190699752,
+            "left_arm_angle": -0.34342546735527524,
+            "right_arm_angle": -134.6541493097412,
+            "nose_position": -0.35128932821880116,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 49,
+          "distance": 105.10456054928497,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.0767082249118668,
+            "left_fist_angle": -301.0134216424404,
+            "right_fist_dist": 0.3423342619198735,
+            "right_fist_angle": 126.94798483988056,
+            "left_arm_angle": 31.028408265176196,
+            "right_arm_angle": -118.31040031783101,
+            "nose_position": 0.03985792745972329,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 53,
+          "distance": 85.97960039560886,
+          "score": 17.913922038852064,
+          "variable_errors": {
+            "left_fist_dist": 0.44173160704303105,
+            "left_fist_angle": -1.133374153160844,
+            "right_fist_dist": 0.16060815746163304,
+            "right_fist_angle": 112.65410370362785,
+            "left_arm_angle": 8.634212810678115,
+            "right_arm_angle": -135.83498879154877,
+            "nose_position": -0.04393324838900822,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 57,
+          "distance": 87.97037844431512,
+          "score": 17.2146818750985,
+          "variable_errors": {
+            "left_fist_dist": 0.46745955258495664,
+            "left_fist_angle": -6.180819884433561,
+            "right_fist_dist": 0.12924748731067526,
+            "right_fist_angle": 117.39627239045588,
+            "left_arm_angle": -0.4476812837584556,
+            "right_arm_angle": -134.5719924330219,
+            "nose_position": 0.14399618142289908,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 61,
+          "distance": 84.83977687566433,
+          "score": 18.326986550535583,
+          "variable_errors": {
+            "left_fist_dist": 0.4455680101713203,
+            "left_fist_angle": 1.2480485745704186,
+            "right_fist_dist": 0.05240343523745117,
+            "right_fist_angle": 107.77376029930515,
+            "left_arm_angle": 9.499186319900362,
+            "right_arm_angle": -140.56695710871557,
+            "nose_position": -0.04808502138575811,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 65,
+          "distance": 84.36759140446979,
+          "score": 18.500881098548057,
+          "variable_errors": {
+            "left_fist_dist": 0.3459082194960257,
+            "left_fist_angle": -11.980808700038551,
+            "right_fist_dist": 0.32220127666375353,
+            "right_fist_angle": 114.84553628462884,
+            "left_arm_angle": 6.941724992750881,
+            "right_arm_angle": -124.04466352606097,
+            "nose_position": 0.18448587756449497,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 69,
+          "distance": 88.03901711692293,
+          "score": 17.191066230007017,
+          "variable_errors": {
+            "left_fist_dist": 0.4346316849338785,
+            "left_fist_angle": -3.672517934607299,
+            "right_fist_dist": 0.2038583452230166,
+            "right_fist_angle": 121.78220983035659,
+            "left_arm_angle": 1.8464754331098283,
+            "right_arm_angle": -125.12454629616418,
+            "nose_position": 0.010954810192186783,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 73,
+          "distance": 111.06713075660473,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.13646802686733406,
+            "left_fist_angle": -308.8835534492489,
+            "right_fist_dist": 0.23331906309225636,
+            "right_fist_angle": 134.34539389438652,
+            "left_arm_angle": 13.531260103332855,
+            "right_arm_angle": -129.8166110175538,
+            "nose_position": -0.1815139183738274,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 77,
+          "distance": 92.29880120508128,
+          "score": 15.787115961259152,
+          "variable_errors": {
+            "left_fist_dist": 0.5743910564080635,
+            "left_fist_angle": 1.8819893905028948,
+            "right_fist_dist": 0.03465910895053925,
+            "right_fist_angle": 125.04192496881352,
+            "left_arm_angle": 0.23857600824731628,
+            "right_arm_angle": -137.18939202075444,
+            "nose_position": -0.06368571100326291,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 81,
+          "distance": 72.74741415194089,
+          "score": 23.341243497084793,
+          "variable_errors": {
+            "left_fist_dist": 0.49157880994390446,
+            "left_fist_angle": 5.190075464262691,
+            "right_fist_dist": 0.3847776190048864,
+            "right_fist_angle": 95.1337549507923,
+            "left_arm_angle": 11.48122947915105,
+            "right_arm_angle": -115.25153042609395,
+            "nose_position": 0.08534535054556919,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 85,
+          "distance": 75.88340050445372,
+          "score": 21.922251602550283,
+          "variable_errors": {
+            "left_fist_dist": 0.5495231369466141,
+            "left_fist_angle": 3.861910009013343,
+            "right_fist_dist": 0.30738434392987257,
+            "right_fist_angle": 99.43927648720278,
+            "left_arm_angle": 12.240237386062512,
+            "right_arm_angle": -119.82210168538658,
+            "nose_position": 0.08533595652367049,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 89,
+          "distance": 90.67415243584044,
+          "score": 16.308511301556408,
+          "variable_errors": {
+            "left_fist_dist": 0.6312152442662906,
+            "left_fist_angle": 7.53966797935152,
+            "right_fist_dist": 0.3487677219133656,
+            "right_fist_angle": 125.28902802225387,
+            "left_arm_angle": 3.2786355732231853,
+            "right_arm_angle": -129.1545862807927,
+            "nose_position": -0.29417390504610913,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 93,
+          "distance": 63.454887485703,
+          "score": 28.10851165300899,
+          "variable_errors": {
+            "left_fist_dist": 0.13698674370585007,
+            "left_fist_angle": 18.591882984141648,
+            "right_fist_dist": -0.0633641125454909,
+            "right_fist_angle": 64.97931456892884,
+            "left_arm_angle": 4.196048729868133,
+            "right_arm_angle": -128.39537846359653,
+            "nose_position": -0.1374161127505718,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 97,
+          "distance": 72.68805582437848,
+          "score": 23.368969895298964,
+          "variable_errors": {
+            "left_fist_dist": -0.0042388406594672245,
+            "left_fist_angle": 27.708546389339404,
+            "right_fist_dist": -0.20336531961146137,
+            "right_fist_angle": 81.52076668547711,
+            "left_arm_angle": 0.8612244876773913,
+            "right_arm_angle": -137.43034648035672,
+            "nose_position": -0.0879584084751588,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 101,
+          "distance": 76.55956092895072,
+          "score": 21.627787957733627,
+          "variable_errors": {
+            "left_fist_dist": 0.020481521589765295,
+            "left_fist_angle": 17.531673647086677,
+            "right_fist_dist": -0.14059092925341238,
+            "right_fist_angle": 89.39464988144549,
+            "left_arm_angle": -3.044276222000105,
+            "right_arm_angle": -139.91622693995072,
+            "nose_position": -0.01883333353607962,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ]
+    },
+    "STRAIGHT_R": {
+      "count": 26,
+      "mean_distance": 46.4845492591775,
+      "std_distance": 19.529131811476798,
+      "mean_score": 42.54065033106,
+      "std_score": 16.31226591657857,
+      "min_score": 20.434399620732027,
+      "max_score": 74.2352721483177,
+      "mean_variable_errors": {
+        "left_fist_dist": 0.4829490897080929,
+        "left_fist_angle": -11.499609169812139,
+        "right_fist_dist": 0.14788612358857012,
+        "right_fist_angle": 69.93690062454068,
+        "left_arm_angle": 10.091735849835178,
+        "right_arm_angle": 7.151977845777615,
+        "nose_position": -0.008839985471891418,
+        "nose_above_shoulder": 0.0
+      },
+      "std_variable_errors": {
+        "left_fist_dist": 0.17919589523509286,
+        "left_fist_angle": 53.09400204221144,
+        "right_fist_dist": 0.15428431918305882,
+        "right_fist_angle": 32.318816151392355,
+        "left_arm_angle": 11.137863757905363,
+        "right_arm_angle": 26.129399768161143,
+        "nose_position": 0.2705568220614064,
+        "nose_above_shoulder": 0.0
+      },
+      "top_5_worst_notes": [
+        {
+          "index": 6,
+          "distance": 79.39752246764735,
+          "score": 20.434399620732027,
+          "variable_errors": {
+            "left_fist_dist": 0.33636149095836115,
+            "left_fist_angle": -265.7593604065292,
+            "right_fist_dist": 0.16988536872935767,
+            "right_fist_angle": 97.6972992306676,
+            "left_arm_angle": 44.53543574895345,
+            "right_arm_angle": -4.0139691858366255,
+            "nose_position": -0.2448310410503597,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 46,
+          "distance": 78.45369997184942,
+          "score": 20.82379215375373,
+          "variable_errors": {
+            "left_fist_dist": 0.7982069654422779,
+            "left_fist_angle": 8.995358474410978,
+            "right_fist_dist": 0.25667983781446024,
+            "right_fist_angle": 122.92150824866997,
+            "left_arm_angle": 24.522837188038213,
+            "right_arm_angle": 3.7050127339186805,
+            "nose_position": -0.27064471724494477,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 38,
+          "distance": 75.4055594424511,
+          "score": 22.132762949738318,
+          "variable_errors": {
+            "left_fist_dist": 0.7785592202317999,
+            "left_fist_angle": 24.39740800152839,
+            "right_fist_dist": 0.03259321839133289,
+            "right_fist_angle": 118.06754014629806,
+            "left_arm_angle": 11.057395688742016,
+            "right_arm_angle": -5.377266442969107,
+            "nose_position": -0.4293444759632635,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 22,
+          "distance": 68.36356132128027,
+          "score": 25.480130683650305,
+          "variable_errors": {
+            "left_fist_dist": 0.6901429931067693,
+            "left_fist_angle": 27.038645521172157,
+            "right_fist_dist": 0.005075987308717611,
+            "right_fist_angle": 106.95578956188507,
+            "left_arm_angle": -0.3696219454017404,
+            "right_arm_angle": 8.523591531737315,
+            "nose_position": -0.54750771797188,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 70,
+          "distance": 65.42980126275944,
+          "score": 27.019914298122877,
+          "variable_errors": {
+            "left_fist_dist": 0.6072785006881021,
+            "left_fist_angle": 17.152126418153614,
+            "right_fist_dist": 0.04019695051445482,
+            "right_fist_angle": 102.5253816004028,
+            "left_arm_angle": 2.1150930527162197,
+            "right_arm_angle": -6.852977909297159,
+            "nose_position": -0.2389306026772877,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ],
+      "worst_variables": [
+        {
+          "variable": "right_fist_angle",
+          "mean_abs_error": 109.63350375758469
+        },
+        {
+          "variable": "left_fist_angle",
+          "mean_abs_error": 68.66857976435887
+        },
+        {
+          "variable": "left_arm_angle",
+          "mean_abs_error": 16.520076724770327
+        }
+      ],
+      "note_analyses": [
+        {
+          "index": 2,
+          "distance": 29.88082912543185,
+          "score": 55.01212433974786,
+          "variable_errors": {
+            "left_fist_dist": 0.4264631561306424,
+            "left_fist_angle": -5.095022116595885,
+            "right_fist_dist": 0.09826765686928329,
+            "right_fist_angle": 46.59938228064257,
+            "left_arm_angle": 7.069134676056017,
+            "right_arm_angle": 15.586978995396512,
+            "nose_position": -0.022807962496648196,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 6,
+          "distance": 79.39752246764735,
+          "score": 20.434399620732027,
+          "variable_errors": {
+            "left_fist_dist": 0.33636149095836115,
+            "left_fist_angle": -265.7593604065292,
+            "right_fist_dist": 0.16988536872935767,
+            "right_fist_angle": 97.6972992306676,
+            "left_arm_angle": 44.53543574895345,
+            "right_arm_angle": -4.0139691858366255,
+            "nose_position": -0.2448310410503597,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 10,
+          "distance": 51.88727082774277,
+          "score": 35.42524740398014,
+          "variable_errors": {
+            "left_fist_dist": 0.3592633378476063,
+            "left_fist_angle": 3.7321752031098754,
+            "right_fist_dist": 0.378107557083333,
+            "right_fist_angle": 81.33766866807298,
+            "left_arm_angle": 9.999977204177974,
+            "right_arm_angle": 7.98681179218576,
+            "nose_position": 0.002890312966482105,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 14,
+          "distance": 32.22332069718265,
+          "score": 52.49425694260411,
+          "variable_errors": {
+            "left_fist_dist": 0.6302225554875669,
+            "left_fist_angle": -2.0305392770240474,
+            "right_fist_dist": 0.009688061535056414,
+            "right_fist_angle": 50.312795184769726,
+            "left_arm_angle": 19.490363232125947,
+            "right_arm_angle": 4.2179930825381415,
+            "nose_position": -0.012707651362953794,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 18,
+          "distance": 46.46098836297368,
+          "score": 39.4861674220445,
+          "variable_errors": {
+            "left_fist_dist": 0.5322291087101876,
+            "left_fist_angle": -28.133004850101713,
+            "right_fist_dist": 0.19606756278862425,
+            "right_fist_angle": 72.14588413123747,
+            "left_arm_angle": 26.403589993154604,
+            "right_arm_angle": -4.590082616640327,
+            "nose_position": 0.4925849893494191,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 22,
+          "distance": 68.36356132128027,
+          "score": 25.480130683650305,
+          "variable_errors": {
+            "left_fist_dist": 0.6901429931067693,
+            "left_fist_angle": 27.038645521172157,
+            "right_fist_dist": 0.005075987308717611,
+            "right_fist_angle": 106.95578956188507,
+            "left_arm_angle": -0.3696219454017404,
+            "right_arm_angle": 8.523591531737315,
+            "nose_position": -0.54750771797188,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 26,
+          "distance": 45.46865351779474,
+          "score": 40.27766575229038,
+          "variable_errors": {
+            "left_fist_dist": 0.4487600891774883,
+            "left_fist_angle": -26.06686021517379,
+            "right_fist_dist": 0.3472718617655336,
+            "right_fist_angle": 70.7990145341897,
+            "left_arm_angle": 13.681323446666262,
+            "right_arm_angle": -10.564221663982677,
+            "nose_position": 0.3940851450123948,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 30,
+          "distance": 63.78920043787194,
+          "score": 27.92119777516624,
+          "variable_errors": {
+            "left_fist_dist": 0.6603367213518951,
+            "left_fist_angle": 7.880501519121253,
+            "right_fist_dist": 0.09866957345883254,
+            "right_fist_angle": 100.04518521560578,
+            "left_arm_angle": 3.8204693410775983,
+            "right_arm_angle": -5.993209591429027,
+            "nose_position": -0.1938504586394522,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 34,
+          "distance": 22.465967551293982,
+          "score": 63.806230030371125,
+          "variable_errors": {
+            "left_fist_dist": 0.5049451647208134,
+            "left_fist_angle": -8.226939408337671,
+            "right_fist_dist": 0.20332191234341368,
+            "right_fist_angle": 34.38319926398643,
+            "left_arm_angle": 5.192133009632891,
+            "right_arm_angle": 24.45793773161735,
+            "nose_position": -0.024672731063049992,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 38,
+          "distance": 75.4055594424511,
+          "score": 22.132762949738318,
+          "variable_errors": {
+            "left_fist_dist": 0.7785592202317999,
+            "left_fist_angle": 24.39740800152839,
+            "right_fist_dist": 0.03259321839133289,
+            "right_fist_angle": 118.06754014629806,
+            "left_arm_angle": 11.057395688742016,
+            "right_arm_angle": -5.377266442969107,
+            "nose_position": -0.4293444759632635,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 42,
+          "distance": 41.36630755127221,
+          "score": 43.72167764091313,
+          "variable_errors": {
+            "left_fist_dist": 0.5684401809114201,
+            "left_fist_angle": -27.383495612960246,
+            "right_fist_dist": 0.13330714511146535,
+            "right_fist_angle": 63.877287177042604,
+            "left_arm_angle": 29.82281601495021,
+            "right_arm_angle": -13.733683474443419,
+            "nose_position": 0.4884254015016345,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 46,
+          "distance": 78.45369997184942,
+          "score": 20.82379215375373,
+          "variable_errors": {
+            "left_fist_dist": 0.7982069654422779,
+            "left_fist_angle": 8.995358474410978,
+            "right_fist_dist": 0.25667983781446024,
+            "right_fist_angle": 122.92150824866997,
+            "left_arm_angle": 24.522837188038213,
+            "right_arm_angle": 3.7050127339186805,
+            "nose_position": -0.27064471724494477,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 50,
+          "distance": 62.35638534416453,
+          "score": 28.732890559045316,
+          "variable_errors": {
+            "left_fist_dist": 0.4963386035374288,
+            "left_fist_angle": -15.967136827897775,
+            "right_fist_dist": 0.20598393306220464,
+            "right_fist_angle": 97.69764650832613,
+            "left_arm_angle": 10.480689160463598,
+            "right_arm_angle": 2.9786536289346355,
+            "nose_position": 0.3179672062924431,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 54,
+          "distance": 58.16010385145151,
+          "score": 31.248397940337263,
+          "variable_errors": {
+            "left_fist_dist": 0.3841812156733238,
+            "left_fist_angle": -3.5200400981007647,
+            "right_fist_dist": 0.09817714875001426,
+            "right_fist_angle": 91.16059366496495,
+            "left_arm_angle": -4.49470646048673,
+            "right_arm_angle": -13.360744939381467,
+            "nose_position": -0.02453481777701339,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 58,
+          "distance": 35.0418146356324,
+          "score": 49.61701867245235,
+          "variable_errors": {
+            "left_fist_dist": 0.38883172784939385,
+            "left_fist_angle": -20.40145659847792,
+            "right_fist_dist": 0.09903180567410119,
+            "right_fist_angle": 54.6632827547254,
+            "left_arm_angle": -3.1794657251705343,
+            "right_arm_angle": 0.3745268817024403,
+            "nose_position": 0.2709081401686524,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 62,
+          "distance": 38.83249826839645,
+          "score": 45.994426247738055,
+          "variable_errors": {
+            "left_fist_dist": 0.5328826114029499,
+            "left_fist_angle": 13.202291971035208,
+            "right_fist_dist": -0.1096243742067633,
+            "right_fist_angle": 60.76781223052933,
+            "left_arm_angle": 8.828861957900642,
+            "right_arm_angle": 2.8093790979191287,
+            "nose_position": -0.1628804028453604,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 66,
+          "distance": 63.78258066915017,
+          "score": 27.92489465732002,
+          "variable_errors": {
+            "left_fist_dist": 0.3743693714470982,
+            "left_fist_angle": -12.886139125429565,
+            "right_fist_dist": 0.28755100716403703,
+            "right_fist_angle": 99.97354742785095,
+            "left_arm_angle": 9.103544763048088,
+            "right_arm_angle": 5.742087439398327,
+            "nose_position": 0.2436166858719052,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 70,
+          "distance": 65.42980126275944,
+          "score": 27.019914298122877,
+          "variable_errors": {
+            "left_fist_dist": 0.6072785006881021,
+            "left_fist_angle": 17.152126418153614,
+            "right_fist_dist": 0.04019695051445482,
+            "right_fist_angle": 102.5253816004028,
+            "left_arm_angle": 2.1150930527162197,
+            "right_arm_angle": -6.852977909297159,
+            "nose_position": -0.2389306026772877,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 74,
+          "distance": 55.70169402994344,
+          "score": 32.8232237297636,
+          "variable_errors": {
+            "left_fist_dist": 0.5120939742084305,
+            "left_fist_angle": -21.601483607697332,
+            "right_fist_dist": 0.17008529967514985,
+            "right_fist_angle": 87.1047903215034,
+            "left_arm_angle": 14.28252813398684,
+            "right_arm_angle": 2.947249903687853,
+            "nose_position": 0.3632936686040489,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 78,
+          "distance": 17.462981797567323,
+          "score": 70.52100086270133,
+          "variable_errors": {
+            "left_fist_dist": 0.6502444440550712,
+            "left_fist_angle": 13.18331908481997,
+            "right_fist_dist": 0.3524521020103175,
+            "right_fist_angle": 5.683151802966336,
+            "left_arm_angle": 0.9884537718859958,
+            "right_arm_angle": 89.09786532707382,
+            "nose_position": -0.3790977229157253,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 82,
+          "distance": 18.39665503732522,
+          "score": 69.216348536034,
+          "variable_errors": {
+            "left_fist_dist": 0.6095748694100878,
+            "left_fist_angle": -5.564640691315105,
+            "right_fist_dist": 0.4172381931481046,
+            "right_fist_angle": 6.771708775362498,
+            "left_arm_angle": 9.157973522889819,
+            "right_arm_angle": 93.77160846741694,
+            "nose_position": 0.033046521524445704,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 86,
+          "distance": 14.89653914425152,
+          "score": 74.2352721483177,
+          "variable_errors": {
+            "left_fist_dist": 0.3320978616160976,
+            "left_fist_angle": 5.693479914378315,
+            "right_fist_dist": 0.16897586927179253,
+            "right_fist_angle": 22.52343777182017,
+            "left_arm_angle": 5.2897183329638535,
+            "right_arm_angle": 19.752532731385216,
+            "nose_position": -0.0671059353721469,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 90,
+          "distance": 55.84733449558834,
+          "score": 32.72775504653899,
+          "variable_errors": {
+            "left_fist_dist": 0.5190944422409969,
+            "left_fist_angle": -0.9899889764252521,
+            "right_fist_dist": 0.4172415007392726,
+            "right_fist_angle": 87.55512992528477,
+            "left_arm_angle": 13.252193312001971,
+            "right_arm_angle": -5.195891783057194,
+            "nose_position": -0.05654927061261019,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 94,
+          "distance": 23.21178733213625,
+          "score": 62.861534304092444,
+          "variable_errors": {
+            "left_fist_dist": 0.27212352386008537,
+            "left_fist_angle": 9.816565930712272,
+            "right_fist_dist": -0.03712048346336,
+            "right_fist_angle": 36.25440211080431,
+            "left_arm_angle": -1.443162879159729,
+            "right_arm_angle": -6.7285555834181086,
+            "nose_position": -0.05589614312648209,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 98,
+          "distance": 39.02108289875656,
+          "score": 45.82127615002326,
+          "variable_errors": {
+            "left_fist_dist": 0.09042096000756944,
+            "left_fist_angle": 0.03770041566673399,
+            "right_fist_dist": -0.05964196805322086,
+            "right_fist_angle": 61.155512259384466,
+            "left_arm_angle": -1.538340692842076,
+            "right_arm_angle": -9.979104587449935,
+            "nose_position": -0.026528497850967194,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 102,
+          "distance": 25.294140696699667,
+          "score": 60.29730274008072,
+          "variable_errors": {
+            "left_fist_dist": 0.05321324233695035,
+            "left_fist_angle": 13.50669694284187,
+            "right_fist_dist": -0.13444351418269196,
+            "right_fist_angle": 39.380465441064075,
+            "left_arm_angle": 4.315898247343278,
+            "right_arm_angle": -9.611097576789073,
+            "nose_position": -0.07876754459045729,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ]
+    },
+    "WEAVE_L": {
+      "count": 13,
+      "mean_distance": 58.03544868254322,
+      "std_distance": 45.318968412606054,
+      "mean_score": 39.66295903411935,
+      "std_score": 39.52154008777235,
+      "min_score": 0.0,
+      "max_score": 91.67379117766289,
+      "mean_variable_errors": {
+        "left_fist_dist": -0.09171510456039043,
+        "left_fist_angle": 95.88000401259167,
+        "right_fist_dist": 0.3154127390007095,
+        "right_fist_angle": -65.46885827937061,
+        "left_arm_angle": -68.30891249329655,
+        "right_arm_angle": 3.7280716862038683,
+        "nose_position": -0.014231820341123814,
+        "nose_above_shoulder": 0.0
+      },
+      "std_variable_errors": {
+        "left_fist_dist": 0.15195973546504132,
+        "left_fist_angle": 132.61578425567492,
+        "right_fist_dist": 0.2763673003739432,
+        "right_fist_angle": 48.900760886002146,
+        "left_arm_angle": 50.57782607134738,
+        "right_arm_angle": 39.88701551014644,
+        "nose_position": 0.07616968823078626,
+        "nose_above_shoulder": 0.0
+      },
+      "top_5_worst_notes": [
+        {
+          "index": 32,
+          "distance": 109.92763304568695,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.03276853253789269,
+            "left_fist_angle": 248.84455551202274,
+            "right_fist_dist": 0.3233092306092496,
+            "right_fist_angle": -125.27525489544364,
+            "left_arm_angle": -98.41127670795095,
+            "right_arm_angle": 51.88001612671546,
+            "nose_position": 0.06719368162809253,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 8,
+          "distance": 108.24854092636376,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.021383886720790612,
+            "left_fist_angle": 227.6446719552523,
+            "right_fist_dist": 0.5256072884418177,
+            "right_fist_angle": -152.31264454425252,
+            "left_arm_angle": -114.9940895463345,
+            "right_arm_angle": 116.69853707411528,
+            "nose_position": 0.012416828689294734,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 16,
+          "distance": 107.72687536090604,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.09628701330927703,
+            "left_fist_angle": 242.30779441110002,
+            "right_fist_dist": 0.12550606207620724,
+            "right_fist_angle": -121.13666231990553,
+            "left_arm_angle": -114.40049787893581,
+            "right_arm_angle": 33.35688505844173,
+            "nose_position": -0.010897213988134667,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 72,
+          "distance": 104.8787169414824,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.2867967502201321,
+            "left_fist_angle": 246.37083187289795,
+            "right_fist_dist": 0.09818383537961206,
+            "right_fist_angle": -51.19511706379308,
+            "left_arm_angle": -111.43146159098181,
+            "right_arm_angle": -28.506240510862753,
+            "nose_position": 0.06036271916544593,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 0,
+          "distance": 100.57565563743887,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.07078826937679306,
+            "left_fist_angle": 230.11565988637625,
+            "right_fist_dist": 0.3485769665249279,
+            "right_fist_angle": -81.95598461124936,
+            "left_arm_angle": -121.23253579472097,
+            "right_arm_angle": -1.7246592209289844,
+            "nose_position": 0.02907034036528533,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ],
+      "worst_variables": [
+        {
+          "variable": "left_fist_angle",
+          "mean_abs_error": 239.05670272752985
+        },
+        {
+          "variable": "left_arm_angle",
+          "mean_abs_error": 112.09397230378481
+        },
+        {
+          "variable": "right_fist_angle",
+          "mean_abs_error": 106.37513268692882
+        }
+      ],
+      "note_analyses": [
+        {
+          "index": 0,
+          "distance": 100.57565563743887,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.07078826937679306,
+            "left_fist_angle": 230.11565988637625,
+            "right_fist_dist": 0.3485769665249279,
+            "right_fist_angle": -81.95598461124936,
+            "left_arm_angle": -121.23253579472097,
+            "right_arm_angle": -1.7246592209289844,
+            "nose_position": 0.02907034036528533,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 8,
+          "distance": 108.24854092636376,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.021383886720790612,
+            "left_fist_angle": 227.6446719552523,
+            "right_fist_dist": 0.5256072884418177,
+            "right_fist_angle": -152.31264454425252,
+            "left_arm_angle": -114.9940895463345,
+            "right_arm_angle": 116.69853707411528,
+            "nose_position": 0.012416828689294734,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 16,
+          "distance": 107.72687536090604,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.09628701330927703,
+            "left_fist_angle": 242.30779441110002,
+            "right_fist_dist": 0.12550606207620724,
+            "right_fist_angle": -121.13666231990553,
+            "left_arm_angle": -114.40049787893581,
+            "right_arm_angle": 33.35688505844173,
+            "nose_position": -0.010897213988134667,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 24,
+          "distance": 42.55504498634597,
+          "score": 42.69446498810607,
+          "variable_errors": {
+            "left_fist_dist": -0.3943771938295093,
+            "left_fist_angle": -75.46616367645458,
+            "right_fist_dist": 0.016987182438811532,
+            "right_fist_angle": -51.55240889766063,
+            "left_arm_angle": -103.06180456573706,
+            "right_arm_angle": -28.398497901155384,
+            "nose_position": 0.07904731890532923,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 32,
+          "distance": 109.92763304568695,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.03276853253789269,
+            "left_fist_angle": 248.84455551202274,
+            "right_fist_dist": 0.3233092306092496,
+            "right_fist_angle": -125.27525489544364,
+            "left_arm_angle": -98.41127670795095,
+            "right_arm_angle": 51.88001612671546,
+            "nose_position": 0.06719368162809253,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 40,
+          "distance": 100.21650924323338,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": 0.057225741108582806,
+            "left_fist_angle": 225.08223959499696,
+            "right_fist_dist": 0.04211685935765347,
+            "right_fist_angle": -116.7424182557188,
+            "left_arm_angle": -105.9212384918149,
+            "right_arm_angle": -15.057365769370456,
+            "nose_position": 0.06497652890489773,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 48,
+          "distance": 42.140659305211535,
+          "score": 43.049774806474694,
+          "variable_errors": {
+            "left_fist_dist": -0.3329140165177951,
+            "left_fist_angle": -73.50668181295879,
+            "right_fist_dist": -0.09377012019265216,
+            "right_fist_angle": -74.25871771812612,
+            "left_arm_angle": -87.24252077380218,
+            "right_arm_angle": -22.634374855264006,
+            "nose_position": -0.1304226858215144,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 56,
+          "distance": 8.164884167306745,
+          "score": 84.9338316906462,
+          "variable_errors": {
+            "left_fist_dist": -0.09328601272910442,
+            "left_fist_angle": -8.035582370470223,
+            "right_fist_dist": 0.6796467523089118,
+            "right_fist_angle": -4.835998701535743,
+            "left_arm_angle": -29.77136556753088,
+            "right_arm_angle": -4.3376055474586614,
+            "nose_position": -0.051327562837621965,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 64,
+          "distance": 4.346682903584127,
+          "score": 91.67379117766289,
+          "variable_errors": {
+            "left_fist_dist": 0.1366801428563963,
+            "left_fist_angle": 0.8732129458205833,
+            "right_fist_dist": 0.6941487260672388,
+            "right_fist_angle": -10.360400792947331,
+            "left_arm_angle": 13.014586871529445,
+            "right_arm_angle": -3.3229488586263045,
+            "nose_position": 0.02691001151246513,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 72,
+          "distance": 104.8787169414824,
+          "score": 0.0,
+          "variable_errors": {
+            "left_fist_dist": -0.2867967502201321,
+            "left_fist_angle": 246.37083187289795,
+            "right_fist_dist": 0.09818383537961206,
+            "right_fist_angle": -51.19511706379308,
+            "left_arm_angle": -111.43146159098181,
+            "right_arm_angle": -28.506240510862753,
+            "nose_position": 0.06036271916544593,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 80,
+          "distance": 9.772357711846666,
+          "score": 82.24668063017376,
+          "variable_errors": {
+            "left_fist_dist": -0.045418726018469524,
+            "left_fist_angle": -12.644084567003958,
+            "right_fist_dist": 0.6036650573618885,
+            "right_fist_angle": -16.06766139325603,
+            "left_arm_angle": -12.33029044559288,
+            "right_arm_angle": -28.72608055126142,
+            "nose_position": -0.13485733945523015,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 88,
+          "distance": 4.391636447148306,
+          "score": 91.59140698251943,
+          "variable_errors": {
+            "left_fist_dist": 0.07238898032294061,
+            "left_fist_angle": -6.417704183072146,
+            "right_fist_dist": 0.6583499317977113,
+            "right_fist_angle": -4.23855559707448,
+            "left_arm_angle": 7.3146400892097745,
+            "right_arm_angle": -12.489954400583162,
+            "nose_position": -0.11001273268475516,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 96,
+          "distance": 11.515636196507064,
+          "score": 79.42851716796862,
+          "variable_errors": {
+            "left_fist_dist": -0.08457082231323165,
+            "left_fist_angle": 1.2713025951847783,
+            "right_fist_dist": 0.07803783483784554,
+            "right_fist_angle": -41.16333284085468,
+            "left_arm_angle": -9.548008010192362,
+            "right_arm_angle": -8.27277872311107,
+            "nose_position": -0.08747355881816386,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ]
+    },
+    "WEAVE_R": {
+      "count": 13,
+      "mean_distance": 26.536494625598007,
+      "std_distance": 17.375648539446114,
+      "mean_score": 61.5417308142459,
+      "std_score": 14.216390036776012,
+      "min_score": 18.695278914837136,
+      "max_score": 79.85705492112555,
+      "mean_variable_errors": {
+        "left_fist_dist": 0.12506870330548356,
+        "left_fist_angle": 4.995010710014498,
+        "right_fist_dist": 0.5837856476924657,
+        "right_fist_angle": 34.4792241181599,
+        "left_arm_angle": -8.159935056973742,
+        "right_arm_angle": -5.613927538774549,
+        "nose_position": -0.09244989936744842,
+        "nose_above_shoulder": 0.0
+      },
+      "std_variable_errors": {
+        "left_fist_dist": 0.1424822658545901,
+        "left_fist_angle": 69.2161572752148,
+        "right_fist_dist": 0.25441889953338864,
+        "right_fist_angle": 30.31497200844858,
+        "left_arm_angle": 40.82866572908467,
+        "right_arm_angle": 8.652650336056121,
+        "nose_position": 0.10287373640235793,
+        "nose_above_shoulder": 0.0
+      },
+      "top_5_worst_notes": [
+        {
+          "index": 4,
+          "distance": 83.84495792246379,
+          "score": 18.695278914837136,
+          "variable_errors": {
+            "left_fist_dist": 0.08152371189270591,
+            "left_fist_angle": 233.25680486342335,
+            "right_fist_dist": 0.3735695392179764,
+            "right_fist_angle": -34.28163917272022,
+            "left_arm_angle": -105.37940187772747,
+            "right_arm_angle": 7.705993248182388,
+            "nose_position": 0.0008346162253135263,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 12,
+          "distance": 32.58895465500998,
+          "score": 52.111783441426354,
+          "variable_errors": {
+            "left_fist_dist": -0.13283926184758138,
+            "left_fist_angle": -75.5223435809024,
+            "right_fist_dist": 0.22224154441135469,
+            "right_fist_angle": -25.092864500970222,
+            "left_arm_angle": -85.75679898177525,
+            "right_arm_angle": -7.281305503082351,
+            "nose_position": 0.021657727984516525,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 60,
+          "distance": 25.45614896816951,
+          "score": 60.102245683475516,
+          "variable_errors": {
+            "left_fist_dist": 0.2646258226848842,
+            "left_fist_angle": -3.1020031657529046,
+            "right_fist_dist": 0.7143737499326884,
+            "right_fist_angle": 60.26053381740877,
+            "left_arm_angle": 14.327488571122316,
+            "right_arm_angle": -2.3237027570183066,
+            "nose_position": -0.23814820931779446,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 52,
+          "distance": 25.23153349610293,
+          "score": 60.372850935381926,
+          "variable_errors": {
+            "left_fist_dist": 0.1884935629937945,
+            "left_fist_angle": -8.246426928675305,
+            "right_fist_dist": 0.7127369461852456,
+            "right_fist_angle": 59.60237910681394,
+            "left_arm_angle": 9.682310881112826,
+            "right_arm_angle": -0.08410961620901602,
+            "nose_position": -0.278129387985314,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 44,
+          "distance": 24.70922415199562,
+          "score": 61.006822546772455,
+          "variable_errors": {
+            "left_fist_dist": 0.20237159705547703,
+            "left_fist_angle": -0.7590558512819143,
+            "right_fist_dist": 0.8321336990732059,
+            "right_fist_angle": 57.929062007669074,
+            "left_arm_angle": 22.19205584853958,
+            "right_arm_angle": -6.692871833227432,
+            "nose_position": -0.18693656209752188,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ],
+      "worst_variables": [
+        {
+          "variable": "left_fist_angle",
+          "mean_abs_error": 64.17732687800716
+        },
+        {
+          "variable": "left_arm_angle",
+          "mean_abs_error": 47.46761123205549
+        },
+        {
+          "variable": "right_fist_angle",
+          "mean_abs_error": 47.433295721116444
+        }
+      ],
+      "note_analyses": [
+        {
+          "index": 4,
+          "distance": 83.84495792246379,
+          "score": 18.695278914837136,
+          "variable_errors": {
+            "left_fist_dist": 0.08152371189270591,
+            "left_fist_angle": 233.25680486342335,
+            "right_fist_dist": 0.3735695392179764,
+            "right_fist_angle": -34.28163917272022,
+            "left_arm_angle": -105.37940187772747,
+            "right_arm_angle": 7.705993248182388,
+            "nose_position": 0.0008346162253135263,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 12,
+          "distance": 32.58895465500998,
+          "score": 52.111783441426354,
+          "variable_errors": {
+            "left_fist_dist": -0.13283926184758138,
+            "left_fist_angle": -75.5223435809024,
+            "right_fist_dist": 0.22224154441135469,
+            "right_fist_angle": -25.092864500970222,
+            "left_arm_angle": -85.75679898177525,
+            "right_arm_angle": -7.281305503082351,
+            "nose_position": 0.021657727984516525,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 20,
+          "distance": 19.44901469604766,
+          "score": 67.77476256306618,
+          "variable_errors": {
+            "left_fist_dist": 0.10028699859384871,
+            "left_fist_angle": -1.4396521275033223,
+            "right_fist_dist": 0.44570181490973937,
+            "right_fist_angle": 45.090146811136265,
+            "left_arm_angle": 21.70928749428512,
+            "right_arm_angle": -9.490853476123679,
+            "nose_position": -0.030898153560729176,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 28,
+          "distance": 17.16228463212201,
+          "score": 70.94638800896907,
+          "variable_errors": {
+            "left_fist_dist": 0.3010879626513646,
+            "left_fist_angle": -0.3625059130773991,
+            "right_fist_dist": 0.8007053393666992,
+            "right_fist_angle": 40.38633042381605,
+            "left_arm_angle": 3.4971033657070336,
+            "right_arm_angle": -15.84190325164281,
+            "nose_position": 0.015651640718333627,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 36,
+          "distance": 13.611653833189324,
+          "score": 76.16767113325275,
+          "variable_errors": {
+            "left_fist_dist": -0.08944952229104608,
+            "left_fist_angle": -18.951912564673044,
+            "right_fist_dist": 0.36745071019984854,
+            "right_fist_angle": 27.18659344411182,
+            "left_arm_angle": -5.452496785571682,
+            "right_arm_angle": -20.813331418937018,
+            "nose_position": 0.07706707688621592,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 44,
+          "distance": 24.70922415199562,
+          "score": 61.006822546772455,
+          "variable_errors": {
+            "left_fist_dist": 0.20237159705547703,
+            "left_fist_angle": -0.7590558512819143,
+            "right_fist_dist": 0.8321336990732059,
+            "right_fist_angle": 57.929062007669074,
+            "left_arm_angle": 22.19205584853958,
+            "right_arm_angle": -6.692871833227432,
+            "nose_position": -0.18693656209752188,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 52,
+          "distance": 25.23153349610293,
+          "score": 60.372850935381926,
+          "variable_errors": {
+            "left_fist_dist": 0.1884935629937945,
+            "left_fist_angle": -8.246426928675305,
+            "right_fist_dist": 0.7127369461852456,
+            "right_fist_angle": 59.60237910681394,
+            "left_arm_angle": 9.682310881112826,
+            "right_arm_angle": -0.08410961620901602,
+            "nose_position": -0.278129387985314,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 60,
+          "distance": 25.45614896816951,
+          "score": 60.102245683475516,
+          "variable_errors": {
+            "left_fist_dist": 0.2646258226848842,
+            "left_fist_angle": -3.1020031657529046,
+            "right_fist_dist": 0.7143737499326884,
+            "right_fist_angle": 60.26053381740877,
+            "left_arm_angle": 14.327488571122316,
+            "right_arm_angle": -2.3237027570183066,
+            "nose_position": -0.23814820931779446,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 68,
+          "distance": 23.764643444154746,
+          "score": 62.17029523507357,
+          "variable_errors": {
+            "left_fist_dist": 0.34069875411943407,
+            "left_fist_angle": 2.783011485191821,
+            "right_fist_dist": 0.7863977391034126,
+            "right_fist_angle": 55.25568205828722,
+            "left_arm_angle": 26.2974108086635,
+            "right_arm_angle": 3.3089029566336023,
+            "nose_position": -0.10862537320654136,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 76,
+          "distance": 24.179385009178063,
+          "score": 61.65673601233984,
+          "variable_errors": {
+            "left_fist_dist": 0.18066904545542595,
+            "left_fist_angle": -5.53930739369946,
+            "right_fist_dist": 0.6979760107413808,
+            "right_fist_angle": 56.88947694461547,
+            "left_arm_angle": 17.44420879516929,
+            "right_arm_angle": 0.8073001226863994,
+            "nose_position": -0.07519517146891058,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 84,
+          "distance": 20.878938340585975,
+          "score": 65.86396108625928,
+          "variable_errors": {
+            "left_fist_dist": 0.06341336728792801,
+            "left_fist_angle": -38.39545185812911,
+            "right_fist_dist": 1.0399700395196096,
+            "right_fist_angle": 35.307554203002695,
+            "left_arm_angle": -33.54208325378184,
+            "right_arm_angle": 0.9040301055609952,
+            "nose_position": -0.15586372701451917,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 92,
+          "distance": 11.246598152774846,
+          "score": 79.85705492112555,
+          "variable_errors": {
+            "left_fist_dist": -0.054104588445049395,
+            "left_fist_angle": -22.896817684460764,
+            "right_fist_dist": 0.17006403374711587,
+            "right_fist_angle": 16.289951514412905,
+            "left_arm_angle": -13.041706172370866,
+            "right_arm_angle": -20.675456704010934,
+            "nose_position": -0.14073040882672078,
+            "nose_above_shoulder": 0.0
+          }
+        },
+        {
+          "index": 100,
+          "distance": 22.85109283097968,
+          "score": 63.316650103217064,
+          "variable_errors": {
+            "left_fist_dist": 0.1791156928201002,
+            "left_fist_angle": 4.1107999497289,
+            "right_fist_dist": 0.42589225359377747,
+            "right_fist_angle": 53.4067068784949,
+            "left_arm_angle": 21.94346556596878,
+            "right_arm_angle": -2.5037498768809705,
+            "nose_position": -0.10253276011315787,
+            "nose_above_shoulder": 0.0
+          }
+        }
+      ]
+    }
+  }
+}

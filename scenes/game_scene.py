@@ -62,7 +62,7 @@ class GameScene(BaseScene):
         self.beatmap_loader = BeatmapLoader(self.config_difficulty)
 
         # Game timing
-        self.countdown_duration: float = 3.0
+        self.countdown_duration: float = 5.0  # 5초 카운트다운 (5, 4, 3, 2, 1)
         self.finish_delay: float = 2.5
         self.music_loaded: bool = False
 
@@ -184,6 +184,12 @@ class GameScene(BaseScene):
         )
 
     def cleanup(self) -> Dict[str, Any]:
+        # 테스트 모드에서 포즈 데이터 CSV 저장
+        if self.game_state.test_mode and self.mode_strategy and hasattr(self.mode_strategy, 'save_pose_data'):
+            saved_path = self.mode_strategy.save_pose_data()
+            if saved_path:
+                logger.info(f"포즈 데이터 저장 완료: {saved_path}")
+        
         self.persistent_data.update({
             "score": self.game_state.score,
             "combo": self.game_state.combo,
@@ -249,17 +255,27 @@ class GameScene(BaseScene):
         else:
             self.game_state.status_text = "READY" if not self.game_state.song_start_time else "GO!"
 
-        # Countdown
+        # Countdown (5, 4, 3, 2, 1)
         if self.game_state.song_start_time is None:
             if self.game_state.countdown_start is None:
                 self.game_state.countdown_start = now
-            remaining = max(0.0, self.countdown_duration - (now - self.game_state.countdown_start))
-            self.game_state.status_text = f"{remaining:0.1f}"
-            if remaining <= 0.0:
+            elapsed = now - self.game_state.countdown_start
+            remaining = max(0.0, self.countdown_duration - elapsed)
+            
+            # 카운트다운 숫자 계산 (5, 4, 3, 2, 1)
+            # remaining이 5.0~4.0이면 5, 4.0~3.0이면 4, ... 1.0~0.0이면 1
+            if remaining > 0.0:
+                # remaining이 5.0~4.0이면 5, 4.0~3.0이면 4, ... 1.0~0.0이면 1
+                countdown_number = min(5, max(1, int(remaining) + 1))
+                self.game_state.countdown_number = countdown_number
+            else:
+                # 카운트다운이 끝나면 게임 시작
+                self.game_state.countdown_number = 0
                 self.game_state.song_start_time = now
                 self.game_state.status_text = "GO!"
                 if self.audio_manager and self.music_loaded:
                     self.audio_manager.play_music()
+            # 카운트다운 중에는 노트 스폰하지 않음
             return
 
         # Gameplay loop
@@ -292,6 +308,11 @@ class GameScene(BaseScene):
             self.judgment_processor.process_weave_judgments(game_time, active_notes, now)
             self.judgment_processor.process_misses(game_time, active_notes, now)
         
+        # 테스트 모드에서 포즈 데이터 수집 (hit area 도달 감지)
+        if self.game_state.test_mode and self.mode_strategy and hasattr(self.mode_strategy, 'check_and_collect_pose_data'):
+            active_notes = self.note_manager.get_active_notes() if self.note_manager else []
+            self.mode_strategy.check_and_collect_pose_data(game_time, active_notes, self.judge_timing)
+        
         # Cleanup hit notes
         if self.note_manager:
             self.note_manager.cleanup_hit_notes()
@@ -315,15 +336,30 @@ class GameScene(BaseScene):
         if self.background_sprite_list:
             self.background_sprite_list.draw()
 
-        # Status text
-        arcade.draw_text(
-            self.game_state.status_text,
-            width / 2,
-            height - 100,
-            arcade.color.AQUA,
-            font_size=20,
-            anchor_x="center",
-        )
+        # 카운트다운 표시 (5, 4, 3, 2, 1)
+        if self.game_state.song_start_time is None and self.game_state.countdown_number > 0:
+            countdown_text = str(self.game_state.countdown_number)
+            arcade.draw_text(
+                countdown_text,
+                width / 2,
+                height / 2,
+                arcade.color.WHITE,
+                font_size=120,
+                anchor_x="center",
+                anchor_y="center",
+                bold=True,
+            )
+        else:
+            # 일반 상태 텍스트 (카운트다운이 아닐 때만)
+            if self.game_state.status_text and self.game_state.status_text != "GO!":
+                arcade.draw_text(
+                    self.game_state.status_text,
+                    width / 2,
+                    height - 100,
+                    arcade.color.AQUA,
+                    font_size=20,
+                    anchor_x="center",
+                )
 
         # Hit zone
         hit_zone_x, hit_zone_y = self.to_arcade_xy(self.hit_zone_camera)
@@ -361,20 +397,21 @@ class GameScene(BaseScene):
         arcade.draw_text(f"Max Combo: {self.game_state.max_combo}", stats_x, stats_y - 60, arcade.color.LIGHT_GREEN, 18)
         arcade.draw_text(f"Last: {self.game_state.last_judgement_type or '-'}", stats_x, stats_y - 90, arcade.color.LIGHT_GREEN, 18)
 
-        # Draw judgement text
-        if self.game_state.last_judgement_type:
-            age = time.time() - self.game_state.last_judgement_time
-            if age < 1.0:
-                judge_color_bgr = self.config_colors.get("judgement", {}).get(self.game_state.last_judgement_type, (255, 255, 255))
-                judge_color_rgb = self.bgr_to_rgb(tuple(judge_color_bgr))
-                arcade.draw_text(
-                    self.game_state.last_judgement_type,
-                    width / 2,
-                    hit_zone_y - 200,
-                    judge_color_rgb,
-                    font_size=28,
-                    anchor_x="center",
-                )
+        # Draw judgement text (테스트 모드가 아닐 때만 중앙에 표시)
+        if not self.game_state.test_mode:
+            if self.game_state.last_judgement_type:
+                age = time.time() - self.game_state.last_judgement_time
+                if age < 1.0:
+                    judge_color_bgr = self.config_colors.get("judgement", {}).get(self.game_state.last_judgement_type, (255, 255, 255))
+                    judge_color_rgb = self.bgr_to_rgb(tuple(judge_color_bgr))
+                    arcade.draw_text(
+                        self.game_state.last_judgement_type,
+                        width / 2,
+                        hit_zone_y - 200,
+                        judge_color_rgb,
+                        font_size=28,
+                        anchor_x="center",
+                    )
 
         if self.mode_strategy:
             self.mode_strategy.draw_hud()
@@ -383,7 +420,9 @@ class GameScene(BaseScene):
     def _draw_pose_markers(self) -> None:
         """캘리브레이션 화면과 동일한 스타일로 랜드마크를 그립니다."""
         marker_radius = 8 * max(self.x_scale, self.y_scale, 1.0)
+        small_marker_radius = 4 * max(self.x_scale, self.y_scale, 1.0)
 
+        # 기존 3개 중요 랜드마크 그리기 (크기 유지)
         if self.last_nose_pos:
             self._draw_marker(self.last_nose_pos, arcade.color.GOLD, marker_radius)
 
@@ -393,11 +432,92 @@ class GameScene(BaseScene):
         if self.last_left_fist:
             self._draw_marker(self.last_left_fist, arcade.color.SALMON, marker_radius)
 
+        # 추가 랜드마크 가져오기 및 그리기
+        if not self.pose_tracker:
+            return
+            
+        landmarks = self.pose_tracker.get_smoothed_landmarks()
+        if not landmarks:
+            return
+            
+        # 어깨, 팔꿈치, 손목, 양눈 랜드마크 추출
+        left_shoulder = landmarks.get("shoulders")[0] if landmarks.get("shoulders") and isinstance(landmarks.get("shoulders"), tuple) and len(landmarks.get("shoulders")) >= 1 else None
+        right_shoulder = landmarks.get("shoulders")[1] if landmarks.get("shoulders") and isinstance(landmarks.get("shoulders"), tuple) and len(landmarks.get("shoulders")) >= 2 else None
+        left_elbow = landmarks.get("left_elbow")
+        right_elbow = landmarks.get("right_elbow")
+        left_wrist = landmarks.get("left_wrist")
+        right_wrist = landmarks.get("right_wrist")
+        left_eye = landmarks.get("left_eye_inner")
+        right_eye = landmarks.get("right_eye_inner")
+        nose = landmarks.get("nose")
+
+        # 목 위치 계산 (양 어깨의 중앙점)
+        neck_pos = None
+        if left_shoulder and right_shoulder:
+            neck_pos = (
+                (left_shoulder[0] + right_shoulder[0]) / 2,
+                (left_shoulder[1] + right_shoulder[1]) / 2
+            )
+
+        # 추가 랜드마크 그리기 (작은 크기, 모두 회색)
+        if left_shoulder:
+            self._draw_marker(left_shoulder, arcade.color.GRAY, small_marker_radius)
+        if right_shoulder:
+            self._draw_marker(right_shoulder, arcade.color.GRAY, small_marker_radius)
+        if neck_pos:
+            self._draw_marker(neck_pos, arcade.color.GRAY, small_marker_radius)
+        if left_elbow:
+            self._draw_marker(left_elbow, arcade.color.GRAY, small_marker_radius)
+        if right_elbow:
+            self._draw_marker(right_elbow, arcade.color.GRAY, small_marker_radius)
+        if left_wrist:
+            self._draw_marker(left_wrist, arcade.color.GRAY, small_marker_radius)
+        if right_wrist:
+            self._draw_marker(right_wrist, arcade.color.GRAY, small_marker_radius)
+        if left_eye:
+            self._draw_marker(left_eye, arcade.color.GRAY, small_marker_radius)
+        if right_eye:
+            self._draw_marker(right_eye, arcade.color.GRAY, small_marker_radius)
+
+        # 연결선 그리기 (양팔: 어깨 → 팔꿈치 → 손목)
+        # 반투명 효과를 시뮬레이션하기 위해 밝은 회색 선 사용
+        line_color = (200, 200, 200)  # 밝은 회색 (반투명 흰색 효과)
+        line_width = 2
+        
+        # 코와 목 연결선
+        if nose and neck_pos:
+            self._draw_connection_line(nose, neck_pos, line_color, line_width)
+        
+        # 어깨와 목 연결선 (양 어깨를 목과 연결)
+        if left_shoulder and neck_pos:
+            self._draw_connection_line(left_shoulder, neck_pos, line_color, line_width)
+        if right_shoulder and neck_pos:
+            self._draw_connection_line(right_shoulder, neck_pos, line_color, line_width)
+        
+        # 왼팔 연결선
+        if left_shoulder and left_elbow:
+            self._draw_connection_line(left_shoulder, left_elbow, line_color, line_width)
+        if left_elbow and left_wrist:
+            self._draw_connection_line(left_elbow, left_wrist, line_color, line_width)
+        
+        # 오른팔 연결선
+        if right_shoulder and right_elbow:
+            self._draw_connection_line(right_shoulder, right_elbow, line_color, line_width)
+        if right_elbow and right_wrist:
+            self._draw_connection_line(right_elbow, right_wrist, line_color, line_width)
+
     def _draw_marker(self, pos: Tuple[float, float], color: Tuple[int, int, int], radius: float) -> None:
         """마커를 그립니다."""
         cx, cy = self.to_arcade_xy(pos)
         arcade.draw_circle_filled(cx, cy, radius, color)
         arcade.draw_circle_outline(cx, cy, radius + 2, arcade.color.WHITE, 2)
+    
+    def _draw_connection_line(self, pos1: Tuple[float, float], pos2: Tuple[float, float], 
+                             color: Tuple[int, int, int], width: int) -> None:
+        """두 랜드마크를 연결하는 선을 그립니다."""
+        x1, y1 = self.to_arcade_xy(pos1)
+        x2, y2 = self.to_arcade_xy(pos2)
+        arcade.draw_line(x1, y1, x2, y2, color, width)
 
     def _draw_dodge_lines(self, width: int, height: int) -> None:
         """Dodge 라인을 그립니다."""
@@ -496,7 +616,7 @@ class GameScene(BaseScene):
             item = self.beatmap_items[self.beatmap_index]
             spawn_time = item.get("t", 0.0) - self.pre_spawn_time
             if game_time < spawn_time:
-                break
+                    break
             
             self.note_manager.spawn_note(
                 item,

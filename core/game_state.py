@@ -22,6 +22,7 @@ class GameState:
     judge_log: Deque[str] = field(default_factory=lambda: deque(maxlen=10))
     status_text: str = "Ready!"
     countdown_start: Optional[float] = None
+    countdown_number: int = 0
     finish_trigger_time: Optional[float] = None
     
     def reset(self) -> None:
@@ -36,6 +37,7 @@ class GameState:
         self.judge_log.clear()
         self.status_text = "Ready!"
         self.countdown_start = None
+        self.countdown_number = 0
         self.finish_trigger_time = None
     
     def update_combo(self, judgement: str) -> None:
